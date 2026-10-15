@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale }}">
+  {{ partial "head.html" . }}
+  <body class="{{ if .IsHome }}is-home{{ end }}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {{ partial "header.html" . }}
+    <button class="nav-scrim" type="button" data-nav-close aria-label="Close navigation"></button>
+    <div class="docs-shell">
+      {{ partial "sidebar.html" . }}
+      <main class="docs-main" id="main-content">
+        {{ block "main" . }}{{ end }}
+      </main>
+      {{ if and (not .IsHome) (ne .TableOfContents "<nav id=\"TableOfContents\"></nav>") }}
+        <aside class="toc-panel" aria-label="On this page">
+          <p>On this page</p>
+          {{ .TableOfContents }}
+        </aside>
+      {{ end }}
+    </div>
+    {{ partial "footer.html" . }}
+    {{ $script := resources.Get "js/docs.js" | minify | fingerprint }}
+    <script src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}" defer></script>
+  </body>
+</html>

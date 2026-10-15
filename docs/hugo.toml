@@ -1,0 +1,46 @@
+# Update baseURL when the domain is chosen. The same value lives in src/app/site-config.ts and blog/hugo.toml.
+baseURL = "https://agentshield.example/docs/"
+locale = "en-US"
+title = "agentshield docs"
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term"]
+
+[params]
+description = "Run agentshield on Kubernetes or AWS, learn how findings are produced and fixes are approved, and write plugins."
+github = "https://github.com/solo-io/agentshield"
+marketingURL = "/"
+blogURL = "/blog/"
+siteURL = "https://agentshield.example/"
+
+[sitemap]
+changeFreq = "monthly"
+priority = 0.7
+filename = "sitemap.xml"
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[markup.highlight]
+noClasses = false
+lineNos = false
+
+[markup.tableOfContents]
+startLevel = 2
+endLevel = 3
+ordered = false
+
+[[module.mounts]]
+source = "assets"
+target = "assets"
+
+[[module.mounts]]
+source = "static"
+target = "static"
+
+[[module.mounts]]
+source = "../public/fonts"
+target = "static/fonts"
+
+[[module.mounts]]
+source = "../public/brand"
+target = "static/brand"

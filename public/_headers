@@ -1,0 +1,45 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/docs/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/docs/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/docs/imgs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/blog/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/blog/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/blog/imgs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/docs/fonts/*
+  Cache-Control: public, max-age=2592000
+
+/blog/fonts/*
+  Cache-Control: public, max-age=2592000
+
+/fonts/*
+  Cache-Control: public, max-age=2592000
+
+/brand/*
+  Cache-Control: public, max-age=86400
+
+/docs/brand/*
+  Cache-Control: public, max-age=86400
+
+/blog/brand/*
+  Cache-Control: public, max-age=86400
+
+/images/*
+  Cache-Control: public, max-age=86400

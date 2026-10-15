@@ -1,0 +1,8 @@
+<article class="post-card">
+  <div class="post-card-meta">
+    {{ with .Params.categories }}{{ with index . 0 }}<a class="post-category" href="{{ printf "categories/%s/" (. | urlize) | relURL }}">{{ . }}</a>{{ end }}{{ end }}
+    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
+  </div>
+  <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+  <p>{{ .Description | default .Summary | plainify }}</p>
+</article>

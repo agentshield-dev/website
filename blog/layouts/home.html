@@ -1,0 +1,29 @@
+{{ define "main" }}
+  {{ $posts := where site.RegularPages "Section" "posts" }}
+  <section class="blog-intro">
+    <h1>Blog</h1>
+    <p>Release notes, how-tos, and engineering notes from the agentshield project.</p>
+  </section>
+
+  <section class="blog-feed" aria-label="Blog posts">
+    <nav class="category-filter" aria-label="Filter posts by category">
+      <a class="active" href="{{ site.Home.RelPermalink }}" aria-current="page">All</a>
+      {{ range site.Taxonomies.categories.Alphabetical }}
+        <a href="{{ .Page.RelPermalink }}">{{ .Page.LinkTitle }}</a>
+      {{ end }}
+    </nav>
+    <div class="post-grid">
+      {{ range first 12 $posts }}
+        {{ partial "post-card.html" . }}
+      {{ else }}
+        <div class="empty-state">
+          <h2>First post coming soon.</h2>
+          <p>Subscribe to the RSS feed to follow new posts.</p>
+        </div>
+      {{ end }}
+    </div>
+    {{ if gt (len $posts) 12 }}
+      <a class="archive-link" href="{{ "posts/" | relURL }}">Browse all posts <span aria-hidden="true">→</span></a>
+    {{ end }}
+  </section>
+{{ end }}

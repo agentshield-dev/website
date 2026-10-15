@@ -1,0 +1,55 @@
+name: Publish website
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up Hugo
+        shell: bash
+        run: |
+          hugo_dir="$(mktemp -d "${RUNNER_TEMP}/hugo.XXXXXX")"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/gohugoio/hugo/releases/download/v0.163.3/hugo_extended_0.163.3_linux-amd64.tar.gz \
+            --output "${hugo_dir}/hugo.tar.gz"
+          printf '%s  %s\n' \
+            '1234302ece1167cef2c252aaa69c89b4f0afc5851f1a30536d693e8e7fc4d1bf' \
+            "${hugo_dir}/hugo.tar.gz" | sha256sum --check
+          tar -xzf "${hugo_dir}/hugo.tar.gz" --directory "${hugo_dir}" hugo
+          echo "${hugo_dir}" >> "${GITHUB_PATH}"
+          "${hugo_dir}/hugo" version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build:cloudflare
+
+      - name: Deploy to Cloudflare Pages
+        run: npx wrangler pages deploy
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

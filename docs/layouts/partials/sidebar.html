@@ -1,0 +1,22 @@
+{{ $current := .RelPermalink }}
+<aside class="docs-sidebar" id="docs-navigation">
+  <div class="mobile-filter">
+    <label for="docs-search-mobile">Filter documentation</label>
+    <input id="docs-search-mobile" type="search" placeholder="Filter documentation" autocomplete="off" data-nav-filter>
+  </div>
+  <nav aria-label="Documentation">
+    <a class="overview-link {{ if .IsHome }}active{{ end }}" href="{{ site.Home.RelPermalink }}">Overview</a>
+    {{ range site.Sections.ByWeight }}
+      <section class="nav-group" data-nav-group>
+        <a class="nav-group-title {{ if eq $current .RelPermalink }}active{{ end }}" href="{{ .RelPermalink }}">{{ .Title }}</a>
+        {{ with .Pages }}
+          <ul>
+            {{ range .ByWeight }}
+              <li><a class="{{ if eq $current .RelPermalink }}active{{ end }}" href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+            {{ end }}
+          </ul>
+        {{ end }}
+      </section>
+    {{ end }}
+  </nav>
+</aside>

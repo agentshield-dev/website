@@ -1,0 +1,80 @@
+# baseURL is a placeholder. Update it with the real domain, along with `url` in
+# src/app/site-config.ts and baseURL in docs/hugo.toml.
+baseURL = "https://agentshield.example/blog/"
+locale = "en-US"
+title = "agentshield blog"
+enableRobotsTXT = false
+summaryLength = 32
+
+[pagination]
+pagerSize = 8
+
+[params]
+description = "Release notes, how-tos, and engineering notes from the agentshield project."
+author = "agentshield team"
+github = "https://github.com/solo-io/agentshield"
+docsURL = "/docs/"
+marketingURL = "/"
+siteURL = "https://agentshield.example/"
+defaultImage = "https://agentshield.example/opengraph-image.png"
+
+[permalinks]
+posts = "/:year/:month/:slug/"
+
+[taxonomies]
+category = "categories"
+tag = "tags"
+
+[outputs]
+home = ["HTML", "RSS", "JSON"]
+section = ["HTML", "RSS"]
+taxonomy = ["HTML", "RSS"]
+term = ["HTML", "RSS"]
+
+[related]
+includeNewer = true
+threshold = 60
+toLower = true
+
+[[related.indices]]
+name = "tags"
+weight = 100
+
+[[related.indices]]
+name = "categories"
+weight = 80
+
+[[related.indices]]
+name = "date"
+weight = 10
+
+[markup.goldmark.renderer]
+unsafe = false
+
+[markup.highlight]
+noClasses = false
+lineNos = false
+
+[[module.mounts]]
+source = "assets"
+target = "assets"
+
+[[module.mounts]]
+source = "static"
+target = "static"
+
+[[module.mounts]]
+source = "../docs/assets/imgs"
+target = "assets/imgs"
+
+[[module.mounts]]
+source = "../public/images"
+target = "static/images"
+
+[[module.mounts]]
+source = "../public/fonts"
+target = "static/fonts"
+
+[[module.mounts]]
+source = "../public/brand"
+target = "static/brand"

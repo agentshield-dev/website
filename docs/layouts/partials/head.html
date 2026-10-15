@@ -1,0 +1,84 @@
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7fc">
+  {{ $description := .Description | default site.Params.description }}
+  {{ $title := cond .IsHome site.Title (printf "%s | %s" .Title site.Title) }}
+  {{ $image := printf "%sopengraph-image.png" site.Params.siteURL }}
+  {{ $imageAlt := "agentshield. Assume every attacker is an agent." }}
+  <meta name="description" content="{{ $description }}">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <title>{{ $title }}</title>
+  <link rel="canonical" href="{{ .Permalink }}">
+  {{ $favicon := resources.Get "imgs/mark-color.svg" | fingerprint }}
+  <link rel="icon" href="{{ $favicon.RelPermalink }}" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <meta property="og:title" content="{{ $title }}">
+  <meta property="og:description" content="{{ $description }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:site_name" content="agentshield">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+  <meta property="og:image" content="{{ $image }}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{ $imageAlt }}">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ $title }}">
+  <meta name="twitter:description" content="{{ $description }}">
+  <meta name="twitter:image" content="{{ $image }}">
+  <meta name="twitter:image:alt" content="{{ $imageAlt }}">
+
+  {{ $pageType := cond .IsPage "TechArticle" "CollectionPage" }}
+  {{ $pageSchema := dict
+    "@type" $pageType
+    "@id" (printf "%s#webpage" .Permalink)
+    "url" .Permalink
+    "name" $title
+    "headline" .Title
+    "description" $description
+    "inLanguage" site.Language.Locale
+    "image" $image
+  }}
+  {{ $graph := slice $pageSchema }}
+  {{ if not .IsHome }}
+    {{ $breadcrumbItems := slice (dict
+      "@type" "ListItem"
+      "position" 1
+      "name" site.Title
+      "item" site.Home.Permalink
+    ) }}
+    {{ $breadcrumbPosition := 2 }}
+    {{ with .CurrentSection }}
+      {{ if and (ne .Permalink site.Home.Permalink) (ne .Permalink $.Permalink) }}
+        {{ $breadcrumbItems = $breadcrumbItems | append (dict
+          "@type" "ListItem"
+          "position" $breadcrumbPosition
+          "name" .Title
+          "item" .Permalink
+        ) }}
+        {{ $breadcrumbPosition = add $breadcrumbPosition 1 }}
+      {{ end }}
+    {{ end }}
+    {{ $breadcrumbItems = $breadcrumbItems | append (dict
+      "@type" "ListItem"
+      "position" $breadcrumbPosition
+      "name" .Title
+      "item" .Permalink
+    ) }}
+    {{ $graph = $graph | append (dict
+      "@type" "BreadcrumbList"
+      "@id" (printf "%s#breadcrumb" .Permalink)
+      "itemListElement" $breadcrumbItems
+    ) }}
+  {{ end }}
+  {{ $schema := dict "@context" "https://schema.org" "@graph" $graph }}
+  <script type="application/ld+json">{{ $schema | jsonify | safeJS }}</script>
+
+  {{ partial "fonts.html" . }}
+  {{ $styles := resources.Get "css/docs.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $styles.RelPermalink }}" integrity="{{ $styles.Data.Integrity }}">
+</head>

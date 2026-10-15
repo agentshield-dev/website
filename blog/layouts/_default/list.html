@@ -1,0 +1,39 @@
+{{ define "main" }}
+  <header class="archive-header">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="{{ site.Home.RelPermalink }}">Blog</a>
+      <span aria-hidden="true">/</span>
+      <span>{{ .Title }}</span>
+    </nav>
+    <h1>{{ .Title }}</h1>
+    {{ with .Description }}<p>{{ . }}</p>{{ end }}
+  </header>
+
+  {{ if eq .Kind "taxonomy" }}
+    <section class="term-grid" aria-label="{{ .Title }}">
+      {{ range .Data.Terms.Alphabetical }}
+        <a href="{{ .Page.RelPermalink }}">
+          <span>{{ .Page.LinkTitle }}</span>
+          <strong>{{ .Count }}</strong>
+        </a>
+      {{ else }}
+        <p>No topics yet.</p>
+      {{ end }}
+    </section>
+  {{ else }}
+    {{ $paginator := .Paginate .Pages }}
+    <section class="archive-list" aria-label="Posts">
+      <div class="post-grid">
+        {{ range $paginator.Pages }}
+          {{ partial "post-card.html" . }}
+        {{ else }}
+          <div class="empty-state">
+            <h2>No posts yet.</h2>
+            <p>New posts will appear here.</p>
+          </div>
+        {{ end }}
+      </div>
+      {{ partial "pagination.html" $paginator }}
+    </section>
+  {{ end }}
+{{ end }}

@@ -1,0 +1,22 @@
+{{ define "main" }}
+  <article class="doc-article section-page">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="{{ site.Home.RelPermalink }}">Docs</a>
+    </nav>
+    <header class="article-header">
+      <h1>{{ .Title }}</h1>
+      {{ with .Description }}<p>{{ . }}</p>{{ end }}
+    </header>
+    <div class="prose">{{ .Content }}</div>
+    {{ with .Pages }}
+      <div class="guide-list">
+        {{ range .ByWeight }}
+          <a href="{{ .RelPermalink }}">
+            <div><h2>{{ .Title }}</h2><p>{{ .Description }}</p></div>
+            <i aria-hidden="true">→</i>
+          </a>
+        {{ end }}
+      </div>
+    {{ end }}
+  </article>
+{{ end }}

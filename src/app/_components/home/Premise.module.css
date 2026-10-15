@@ -1,0 +1,40 @@
+.premise {
+	padding-inline: clamp(var(--space-xs), 1.5vw, var(--space-md));
+}
+
+.premise__panel {
+	padding-block: var(--section-md);
+	border-radius: var(--radius-lg);
+	background: var(--color-night);
+	color: var(--color-on-night);
+}
+
+.premise__grid {
+	display: grid;
+	gap: var(--space-xl);
+}
+
+.premise__hl {
+	color: var(--color-accent-on-night);
+}
+
+.premise__body {
+	display: grid;
+	gap: var(--space-md);
+	max-width: 30rem;
+	color: var(--color-on-night-2);
+	font-size: var(--step-1);
+	line-height: 1.5;
+}
+
+@media (min-width: 60rem) {
+	.premise__grid {
+		grid-template-columns: minmax(0, 7fr) minmax(0, 4.5fr);
+		gap: var(--space-2xl);
+		align-items: stretch;
+	}
+
+	.premise__body {
+		align-self: end;
+	}
+}

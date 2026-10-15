@@ -1,0 +1,13 @@
+.page-head {
+	padding-block: calc(var(--space-3xl) + var(--space-md)) var(--space-md);
+}
+
+.inner {
+	display: grid;
+	gap: var(--space-lg);
+}
+
+.title {
+	max-width: 16ch;
+	font-size: clamp(2.5rem, 1rem + 5.2vw, 4.75rem);
+}

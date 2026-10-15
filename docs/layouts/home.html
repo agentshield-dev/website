@@ -1,0 +1,31 @@
+{{ define "main" }}
+  <div class="docs-home">
+    <section class="docs-hero">
+      <h1>Run it. Read a finding. Approve a fix.</h1>
+      <p class="hero-summary">Agentshield maps how your Kubernetes and AWS workloads really talk, investigates what changes with evidence, and proposes fixes you approve. These pages cover running it, how it reasons, and how to extend it.</p>
+      <div class="hero-actions">
+        <a class="button-primary" href="{{ "getting-started/" | relURL }}">Get started <span aria-hidden="true">→</span></a>
+        <a class="button-secondary" href="{{ "concepts/" | relURL }}">How it works</a>
+      </div>
+    </section>
+
+    <section class="home-content prose">
+      {{ .Content }}
+    </section>
+
+    <section class="quick-paths" aria-labelledby="sections-heading">
+      <div class="overview-heading">
+        <h2 id="sections-heading">Browse the docs</h2>
+      </div>
+      <div class="quick-grid">
+        {{ range site.Sections.ByWeight }}
+          <a href="{{ .RelPermalink }}">
+            <h3>{{ .Title }}</h3>
+            <p>{{ .Description }}</p>
+            <i aria-hidden="true">→</i>
+          </a>
+        {{ end }}
+      </div>
+    </section>
+  </div>
+{{ end }}

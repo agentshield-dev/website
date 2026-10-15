@@ -1,0 +1,19 @@
+{{ define "main" }}
+  <section class="search-page">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="{{ site.Home.RelPermalink }}">Blog</a>
+      <span aria-hidden="true">/</span>
+      <span>Search</span>
+    </nav>
+    <h1>Search the blog</h1>
+    <form class="search-form" action="{{ .RelPermalink }}" method="get" data-search-form data-index-url="{{ "index.json" | relURL }}">
+      <label for="blog-search">Search titles, topics, and post text</label>
+      <div>
+        <input id="blog-search" name="q" type="search" autocomplete="off" placeholder="Lateral movement, plugins, remediation" data-search-input>
+        <button type="submit">Search</button>
+      </div>
+    </form>
+    <p class="search-status" aria-live="polite" data-search-status>Enter a term to search published posts.</p>
+    <div class="search-results" data-search-results></div>
+  </section>
+{{ end }}

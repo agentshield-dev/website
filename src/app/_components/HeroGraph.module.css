@@ -1,0 +1,134 @@
+.graph {
+	width: 100%;
+	height: auto;
+	font-family: var(--font-sans);
+}
+
+.edge {
+	fill: none;
+	stroke: var(--color-edge);
+	stroke-width: 2.5;
+	stroke-linecap: round;
+}
+
+.edge--declared {
+	stroke: var(--color-ink-3);
+}
+
+.edge--attack {
+	stroke: var(--color-threat);
+	stroke-width: 5;
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	animation: draw 1.1s var(--ease-out) 0.55s forwards;
+}
+
+.arrowhead {
+	fill: var(--color-threat);
+	opacity: 0;
+	animation: appear var(--dur-short) var(--ease-out) 1.55s forwards;
+}
+
+.halo {
+	fill: var(--color-threat-soft);
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: pop var(--dur-long) var(--ease-out) 0.2s backwards;
+}
+
+.node {
+	fill: var(--color-ink-2);
+}
+
+.node--threat {
+	fill: var(--color-threat);
+}
+
+.node--target {
+	fill: var(--color-ink);
+}
+
+.lock rect {
+	fill: var(--color-paper-2);
+}
+
+.lock path {
+	stroke: var(--color-paper-2);
+	stroke-width: 3;
+	stroke-linecap: round;
+}
+
+.label {
+	fill: var(--color-ink-2);
+	font-size: 15px;
+	font-weight: 520;
+	paint-order: stroke;
+	stroke: var(--color-paper-2);
+	stroke-width: 6px;
+	stroke-linejoin: round;
+}
+
+.label--key {
+	fill: var(--color-ink);
+	font-size: 19px;
+	font-weight: 700;
+}
+
+.label--note {
+	fill: var(--color-ink-3);
+	font-size: 14px;
+	font-weight: 560;
+}
+
+.finding {
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: pop var(--dur-long) var(--ease-out) 1.6s backwards;
+}
+
+.finding__tag {
+	fill: var(--color-accent);
+}
+
+.finding__text {
+	fill: var(--color-on-accent);
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+	font-weight: 600;
+}
+
+.finding__ring {
+	fill: var(--color-paper-2);
+	stroke: var(--color-accent);
+	stroke-width: 3;
+}
+
+@keyframes draw {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes appear {
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes pop {
+	from {
+		opacity: 0;
+		transform: scale(0.88);
+	}
+}
+
+@media (max-width: 39.99rem) {
+	.label--minor,
+	.label--note {
+		display: none;
+	}
+
+	.label--key {
+		font-size: 21px;
+	}
+}

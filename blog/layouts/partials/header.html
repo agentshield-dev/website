@@ -1,0 +1,29 @@
+<header class="site-header">
+  <div class="header-inner">
+    <a class="blog-brand" href="{{ site.Params.marketingURL }}" aria-label="agentshield website, home">
+      {{ partial "brand.html" (dict "size" 24) }}
+    </a>
+    <a class="blog-label" href="{{ site.Home.RelPermalink }}">blog</a>
+    <nav class="site-nav" aria-label="Blog navigation">
+      <a href="{{ site.Home.RelPermalink }}">Latest</a>
+      <a href="{{ "posts/" | relURL }}">All posts</a>
+      <a href="{{ site.Params.docsURL }}">Docs</a>
+    </nav>
+    <div class="header-links">
+      <a href="{{ "index.xml" | relURL }}">RSS</a>
+      <a class="header-cta" href="{{ site.Params.github }}">GitHub</a>
+    </div>
+    <details class="mobile-menu">
+      <summary aria-label="Open navigation">
+        <span aria-hidden="true"><i></i><i></i><i></i></span>
+      </summary>
+      <nav aria-label="Mobile blog navigation">
+        <a href="{{ site.Home.RelPermalink }}">Latest</a>
+        <a href="{{ "posts/" | relURL }}">All posts</a>
+        <a href="{{ "search/" | relURL }}">Search</a>
+        <a href="{{ site.Params.docsURL }}">Docs</a>
+        <a href="{{ "index.xml" | relURL }}">RSS</a>
+      </nav>
+    </details>
+  </div>
+</header>

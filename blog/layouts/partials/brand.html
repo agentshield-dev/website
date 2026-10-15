@@ -1,0 +1,3 @@
+{{- /* The logo lockup, white for night surfaces. Pass a dict with an optional "size", the height in px. */ -}}
+{{- $size := .size | default 26 -}}
+<img class="brand-logo" src="{{ "brand/logo-light.svg" | relURL }}" alt="" width="{{ math.Round (div (mul $size 2910.0) 489.0) }}" height="{{ $size }}">

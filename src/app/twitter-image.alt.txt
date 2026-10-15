@@ -1,0 +1,1 @@
+agentshield: assume every attacker is an agent. Open source defense against lateral movement.

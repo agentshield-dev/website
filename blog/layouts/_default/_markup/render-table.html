@@ -1,0 +1,23 @@
+{{- /* Wrap every table so a wide one scrolls inside its own region instead of the page. blog.js makes the region keyboard-focusable when it actually overflows. */ -}}
+<div class="table-scroll">
+  <table{{ range $key, $value := .Attributes }} {{ $key }}="{{ $value }}"{{ end }}>
+    <thead>
+      {{- range .THead }}
+      <tr>
+        {{- range . }}
+        <th{{ with .Alignment }} style="text-align: {{ . }}"{{ end }}>{{ .Text }}</th>
+        {{- end }}
+      </tr>
+      {{- end }}
+    </thead>
+    <tbody>
+      {{- range .TBody }}
+      <tr>
+        {{- range . }}
+        <td{{ with .Alignment }} style="text-align: {{ . }}"{{ end }}>{{ .Text }}</td>
+        {{- end }}
+      </tr>
+      {{- end }}
+    </tbody>
+  </table>
+</div>

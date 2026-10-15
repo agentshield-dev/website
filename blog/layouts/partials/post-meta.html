@@ -1,0 +1,7 @@
+<div class="post-meta">
+  <span>{{ .Params.author | default site.Params.author }}</span>
+  <span aria-hidden="true">·</span>
+  <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
+  <span aria-hidden="true">·</span>
+  <span>{{ .ReadingTime }} min read</span>
+</div>

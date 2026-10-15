@@ -1,0 +1,40 @@
+{
+  "name": "agentshield-website",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:docs": "hugo server --source docs --disableFastRender",
+    "dev:blog": "npm run build:blog-og && hugo server --source blog --port 1314 --disableFastRender",
+    "build": "next build",
+    "build:docs": "hugo --source docs --gc --minify --cleanDestinationDir",
+    "build:blog": "npm run build:blog-og && hugo --source blog --gc --minify --cleanDestinationDir",
+    "build:blog-og": "node scripts/generate-blog-og.mjs",
+    "build:all": "npm run build && npm run build:docs && npm run build:blog",
+    "build:cloudflare": "npm run build:blog-og && CF_PAGES=1 next build && hugo --source docs --destination ../out/docs --gc --minify --cleanDestinationDir && hugo --source blog --destination ../out/blog --gc --minify --cleanDestinationDir",
+    "preview:cloudflare": "npm run build:cloudflare && wrangler pages dev",
+    "deploy:cloudflare": "npm run build:cloudflare && wrangler pages deploy",
+    "new:post": "hugo new content --source blog --kind posts",
+    "capture:product": "node scripts/capture-product.mjs",
+    "start": "next start",
+    "lint": "eslint",
+    "check": "npm run lint && npm run build:all"
+  },
+  "dependencies": {
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@fontsource/bricolage-grotesque": "^5.2.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.1",
+    "gray-matter": "^4.0.3",
+    "sharp": "^0.35.5",
+    "typescript": "^5",
+    "wrangler": "^4.124.0"
+  }
+}

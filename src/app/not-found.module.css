@@ -1,0 +1,22 @@
+.lost {
+	padding-block: calc(var(--space-4xl) + var(--space-lg)) var(--section-lg);
+}
+
+.inner {
+	display: grid;
+	gap: var(--space-lg);
+	justify-items: start;
+}
+
+.title {
+	max-width: 12ch;
+	font-size: clamp(2.75rem, 1rem + 6vw, 5.5rem);
+}
+
+.lost__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-md) var(--space-lg);
+	margin-top: var(--space-sm);
+}

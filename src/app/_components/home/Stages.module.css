@@ -1,0 +1,135 @@
+.stages__list {
+	display: grid;
+	gap: var(--space-2xl);
+}
+
+.stage {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--space-lg) var(--space-2xl);
+	align-items: end;
+}
+
+.stage__body {
+	display: grid;
+	gap: var(--space-sm);
+	justify-items: start;
+}
+
+.stage__n {
+	margin-bottom: var(--space-xs);
+	color: var(--color-accent);
+	font-size: clamp(3.5rem, 6vw, 5rem);
+	font-weight: 800;
+	letter-spacing: -0.06em;
+	line-height: 0.8;
+}
+
+.stage__body p {
+	max-width: 34rem;
+	color: var(--color-ink-2);
+}
+
+.stage__spec {
+	display: grid;
+	gap: var(--space-sm);
+	align-content: start;
+	padding: var(--space-lg);
+	border-radius: var(--radius-md);
+	background: var(--color-paper-2);
+}
+
+.spec__note {
+	color: var(--color-ink-3);
+	font-size: var(--step--1);
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+}
+
+.chips :global(.token) {
+	background: var(--color-paper);
+}
+
+.record {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: var(--space-2xs) var(--space-lg);
+	margin: 0;
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+	line-height: 1.6;
+}
+
+.record dt {
+	color: var(--color-ink-3);
+}
+
+.record dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+	font-weight: 600;
+}
+
+.triggers {
+	display: grid;
+	gap: var(--space-xs);
+	margin: 0;
+}
+
+.triggers dt {
+	font-weight: 680;
+}
+
+.triggers dd {
+	margin: 0 0 var(--space-xs);
+	color: var(--color-ink-2);
+}
+
+.triggers dd:last-child {
+	margin-bottom: 0;
+}
+
+.steps {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	counter-reset: step;
+}
+
+.steps li {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+	padding: var(--space-xs) var(--space-md);
+	border-radius: var(--radius-pill);
+	background: var(--color-paper);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	counter-increment: step;
+}
+
+.steps li::before {
+	content: counter(step);
+	color: var(--color-ink-3);
+	font-size: 0.8125rem;
+	font-weight: 700;
+}
+
+.steps .steps__you {
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+}
+
+.steps .steps__you::before {
+	color: var(--color-on-accent);
+}
+
+@media (min-width: 48rem) {
+	.stage {
+		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+	}
+}

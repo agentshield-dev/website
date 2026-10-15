@@ -1,0 +1,72 @@
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f7fc">
+  {{ $description := .Description | default .Summary | default site.Params.description | plainify }}
+  {{ $title := cond .IsHome site.Title (printf "%s | %s" .Title site.Title) }}
+  {{ $image := .Params.cover | default site.Params.defaultImage }}
+  {{ $imageAlt := .Params.coverAlt | default "agentshield. Assume every attacker is an agent." }}
+  {{ if and .IsPage (eq .Section "posts") .File }}
+    {{ $image = printf "og/%s.png" .File.ContentBaseName }}
+    {{ $imageAlt = printf "agentshield blog: %s" .Title }}
+  {{ end }}
+  {{ with .Params.ogImage }}{{ $image = . }}{{ end }}
+  {{ with .Params.ogImageAlt }}{{ $imageAlt = . }}{{ end }}
+  {{ if not (hasPrefix $image "http") }}{{ $image = $image | absURL }}{{ end }}
+  <title>{{ $title }}</title>
+  <meta name="description" content="{{ $description }}">
+  <meta name="author" content="{{ .Params.author | default site.Params.author }}">
+  <meta name="robots" content="{{ if .Params.noindex }}noindex, follow{{ else }}index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1{{ end }}">
+  <link rel="canonical" href="{{ .Permalink }}">
+  {{ with site.Home.OutputFormats.Get "RSS" }}<link rel="alternate" type="application/rss+xml" title="agentshield blog" href="{{ .Permalink }}">{{ end }}
+  {{ $favicon := resources.Get "imgs/mark-color.svg" | fingerprint }}
+  <link rel="icon" href="{{ $favicon.RelPermalink }}" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <meta property="og:title" content="{{ $title }}">
+  <meta property="og:description" content="{{ $description }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:site_name" content="agentshield">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+  <meta property="og:image" content="{{ $image }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="{{ $imageAlt }}">
+  {{ if .IsPage }}
+    <meta property="article:published_time" content="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+    <meta property="article:modified_time" content="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
+    {{ range .Params.tags }}<meta property="article:tag" content="{{ . }}">{{ end }}
+  {{ end }}
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ $title }}">
+  <meta name="twitter:description" content="{{ $description }}">
+  <meta name="twitter:image" content="{{ $image }}">
+  <meta name="twitter:image:alt" content="{{ $imageAlt }}">
+
+  {{ if and .IsPage (eq .Section "posts") }}
+    {{ $schema := dict
+      "@context" "https://schema.org"
+      "@type" "BlogPosting"
+      "headline" .Title
+      "description" $description
+      "url" .Permalink
+      "mainEntityOfPage" .Permalink
+      "datePublished" (.Date.Format "2006-01-02T15:04:05Z07:00")
+      "dateModified" (.Lastmod.Format "2006-01-02T15:04:05Z07:00")
+      "image" $image
+      "author" (dict "@type" "Organization" "name" (.Params.author | default site.Params.author) "url" site.Params.siteURL)
+      "publisher" (dict "@type" "Organization" "name" "agentshield" "url" site.Params.siteURL)
+      "keywords" .Params.tags
+    }}
+    <script type="application/ld+json">{{ $schema | jsonify | safeJS }}</script>
+  {{ end }}
+
+  {{ partial "fonts.html" . }}
+  {{ $styles := resources.Get "css/blog.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $styles.RelPermalink }}" integrity="{{ $styles.Data.Integrity }}">
+  {{ $script := resources.Get "js/blog.js" | minify | fingerprint }}
+  <script src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}" defer></script>
+</head>

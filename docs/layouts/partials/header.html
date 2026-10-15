@@ -1,0 +1,19 @@
+<header class="docs-header on-night">
+  <a class="docs-brand" href="{{ site.Home.RelPermalink }}" aria-label="agentshield documentation home">
+    {{ partial "brand.html" (dict "size" 24) }}
+    <span class="docs-brand-label">docs</span>
+  </a>
+  <div class="header-search">
+    <label for="docs-search">Filter documentation</label>
+    <input id="docs-search" type="search" placeholder="Filter documentation" autocomplete="off" data-nav-filter>
+  </div>
+  <nav aria-label="Utility navigation">
+    <a href="{{ site.Params.marketingURL }}">Website</a>
+    <a href="{{ site.Params.blogURL }}">Blog</a>
+    <a href="{{ site.Params.github }}">GitHub</a>
+  </nav>
+  <button class="nav-toggle" type="button" data-nav-toggle aria-controls="docs-navigation" aria-expanded="false">
+    <span aria-hidden="true"><i></i><i></i><i></i></span>
+    <b>Menu</b>
+  </button>
+</header>

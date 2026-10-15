@@ -1,0 +1,25 @@
+---
+import GetStarted from '../components/GetStarted.astro';
+import Faq from '../components/home/Faq.astro';
+import Findings from '../components/home/Findings.astro';
+import Hero from '../components/home/Hero.astro';
+import PluginsTeaser from '../components/home/PluginsTeaser.astro';
+import Premise from '../components/home/Premise.astro';
+import Reasoning from '../components/home/Reasoning.astro';
+import Stages from '../components/home/Stages.astro';
+import Verdict from '../components/home/Verdict.astro';
+import Base from '../layouts/Base.astro';
+import { site } from '../site';
+---
+
+<Base title={`${site.title}: ${site.tagline}`}>
+	<Hero />
+	<Premise />
+	<Stages />
+	<Reasoning />
+	<Verdict />
+	<Findings />
+	<PluginsTeaser />
+	<Faq />
+	<GetStarted />
+</Base>

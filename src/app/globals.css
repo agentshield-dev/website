@@ -1,0 +1,403 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Narrative Workflow (custom SVG hero) · theme: custom, logo purple anchor (hue 294) · enrichment: H9 hand-built SVG · nav: N5 floating pill (solid) · footer: Ft5 Statement */
+/* --font-sans and --font-mono are emitted by next/font in fonts.ts and attached to <html> in layout.tsx. */
+
+:root {
+	/* Paper */
+	--color-paper: oklch(97.8% 0.007 300);
+	--color-paper-2: oklch(95.2% 0.011 300);
+	--color-paper-3: oklch(91.8% 0.017 300);
+
+	/* Ink: the logo's deep violet */
+	--color-ink: #12012a;
+	--color-ink-2: oklch(40% 0.04 295);
+	--color-ink-3: oklch(50% 0.035 295);
+	--color-edge: oklch(72% 0.03 295);
+
+	/* Night */
+	--color-night: #12012a;
+	--color-night-2: oklch(21% 0.09 296);
+	--color-night-3: oklch(27.5% 0.1 295.5);
+	--color-on-night: oklch(96% 0.01 300);
+	--color-on-night-2: oklch(80% 0.03 300);
+
+	/* Accent: the logo's purple */
+	--color-accent: #7b33ea;
+	--color-accent-strong: oklch(46% 0.24 294);
+	--color-accent-soft: oklch(93% 0.035 294);
+	--color-accent-tint: oklch(96.5% 0.018 294);
+	--color-accent-on-night: oklch(78% 0.12 294);
+	--color-on-accent: oklch(99% 0.005 300);
+
+	/* Signals: threat and verified */
+	--color-threat: oklch(60% 0.205 17);
+	--color-threat-ink: oklch(46% 0.16 17);
+	--color-threat-soft: oklch(95% 0.022 17);
+	--color-ok: oklch(52% 0.095 168);
+	--color-ok-ink: oklch(40% 0.075 168);
+	--color-ok-soft: oklch(95% 0.03 168);
+
+	--color-focus: oklch(58% 0.22 294);
+
+	/* Space: 4pt base, named by role */
+	--space-3xs: 0.125rem;
+	--space-2xs: 0.25rem;
+	--space-xs: 0.5rem;
+	--space-sm: 0.75rem;
+	--space-md: 1rem;
+	--space-lg: 1.5rem;
+	--space-xl: 2.5rem;
+	--space-2xl: 4rem;
+	--space-3xl: 6rem;
+	--space-4xl: 9rem;
+	--gutter: clamp(1.25rem, 4vw, 3rem);
+	--content-max: 76rem;
+	--section-sm: clamp(3.5rem, 7vw, 5.5rem);
+	--section-md: clamp(4.5rem, 9vw, 8rem);
+	--section-lg: clamp(5.5rem, 11vw, 10rem);
+
+	/* Type: major third on a 17px body */
+	--step--1: 0.875rem;
+	--step-0: 1.0625rem;
+	--step-1: clamp(1.1875rem, 1.1rem + 0.45vw, 1.4375rem);
+	--step-2: clamp(1.375rem, 1.2rem + 0.9vw, 1.875rem);
+	--step-3: clamp(1.75rem, 1.35rem + 2vw, 2.75rem);
+	--step-4: clamp(2.125rem, 1.4rem + 3.6vw, 4rem);
+	--step-5: clamp(2.75rem, 1.5rem + 6.2vw, 6rem);
+
+	/* Shape */
+	--radius-sm: 0.5rem;
+	--radius-md: 1rem;
+	--radius-lg: 1.75rem;
+	--radius-pill: 999px;
+	--shadow-lift: 0 1px 2px oklch(16% 0.08 297 / 0.08), 0 18px 36px -20px oklch(16% 0.08 297 / 0.4);
+
+	/* Motion */
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+	--dur-micro: 120ms;
+	--dur-short: 220ms;
+	--dur-long: 420ms;
+
+	/* Layers */
+	--z-base: 1;
+	--z-raised: 10;
+	--z-sticky: 200;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	color-scheme: light;
+	overflow-x: clip;
+	scroll-behavior: smooth;
+	scroll-padding-top: var(--space-3xl);
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	min-width: 20rem;
+	margin: 0;
+	overflow-x: clip;
+	background: var(--color-paper);
+	color: var(--color-ink);
+	font-family: var(--font-sans);
+	font-size: var(--step-0);
+	font-optical-sizing: auto;
+	line-height: 1.6;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	margin: 0;
+	min-width: 0;
+	font-style: normal;
+	font-weight: 780;
+	letter-spacing: -0.032em;
+	line-height: 1.04;
+	overflow-wrap: anywhere;
+	text-wrap: balance;
+}
+
+h1 {
+	font-size: var(--step-5);
+	letter-spacing: -0.04em;
+	line-height: 0.98;
+}
+
+h2 {
+	font-size: var(--step-4);
+	letter-spacing: -0.038em;
+	line-height: 1;
+}
+
+h3 {
+	font-size: var(--step-2);
+	font-weight: 700;
+	letter-spacing: -0.024em;
+	line-height: 1.12;
+}
+
+p {
+	margin: 0;
+	text-wrap: pretty;
+}
+
+ul,
+ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+img,
+svg {
+	display: block;
+	max-width: 100%;
+}
+
+a {
+	color: inherit;
+}
+
+strong {
+	font-weight: 680;
+}
+
+code,
+kbd,
+pre {
+	font-family: var(--font-mono);
+	font-feature-settings: 'calt' 0;
+}
+
+:focus-visible {
+	outline: 3px solid var(--color-focus);
+	outline-offset: 3px;
+	border-radius: var(--radius-sm);
+}
+
+::selection {
+	background: var(--color-accent-soft);
+	color: var(--color-ink);
+}
+
+.container {
+	width: 100%;
+	max-width: var(--content-max);
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.skip-link {
+	position: fixed;
+	inset: var(--space-sm) auto auto var(--space-sm);
+	z-index: calc(var(--z-sticky) + 1);
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-pill);
+	background: var(--color-ink);
+	color: var(--color-paper);
+	font-weight: 650;
+	text-decoration: none;
+	transform: translateY(-200%);
+}
+
+.skip-link:focus {
+	transform: none;
+}
+
+/* Bands */
+.band {
+	padding-block: var(--section-md);
+}
+
+.band--tint {
+	background: var(--color-paper-2);
+}
+
+.band--night {
+	background: var(--color-night);
+	color: var(--color-on-night);
+}
+
+/* Section heads: a stacked heading and lede, left-aligned */
+.head {
+	display: grid;
+	gap: var(--space-md);
+	max-width: 46rem;
+	margin-bottom: var(--space-2xl);
+}
+
+.lead {
+	max-width: 36rem;
+	color: var(--color-ink-2);
+	font-size: var(--step-1);
+	line-height: 1.45;
+}
+
+.on-night .lead {
+	color: var(--color-on-night-2);
+}
+
+/* Buttons */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+	min-height: 3rem;
+	padding: var(--space-sm) var(--space-lg);
+	border: 0;
+	border-radius: var(--radius-pill);
+	background: var(--color-paper-3);
+	color: var(--color-ink);
+	font: inherit;
+	font-size: 1rem;
+	font-weight: 650;
+	letter-spacing: -0.005em;
+	line-height: 1;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	transition:
+		background-color var(--dur-micro) var(--ease-out),
+		color var(--dur-micro) var(--ease-out),
+		transform var(--dur-micro) var(--ease-out);
+}
+
+.btn:hover {
+	transform: translateY(-1px);
+}
+
+.btn:active {
+	transform: translateY(0);
+}
+
+.btn--primary {
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+}
+
+.btn--primary:hover {
+	background: var(--color-accent-strong);
+}
+
+.btn--quiet:hover {
+	background: var(--color-accent-soft);
+}
+
+.btn--sm {
+	min-height: 2.5rem;
+	padding: var(--space-xs) var(--space-md);
+	font-size: 0.9375rem;
+}
+
+.on-night .btn--quiet {
+	background: var(--color-night-3);
+	color: var(--color-on-night);
+}
+
+.on-night .btn--quiet:hover {
+	background: var(--color-night-2);
+}
+
+.on-night .btn--primary {
+	background: var(--color-accent-on-night);
+	color: var(--color-night);
+}
+
+.on-night .btn--primary:hover {
+	background: var(--color-on-night);
+}
+
+/* Text link with an arrow */
+.link {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+	color: var(--color-accent);
+	font-weight: 650;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.link:hover {
+	color: var(--color-accent-strong);
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 0.25em;
+}
+
+.on-night .link {
+	color: var(--color-accent-on-night);
+}
+
+.on-night .link:hover {
+	color: var(--color-on-night);
+}
+
+/* Prose links */
+.prose a:not(.btn):not(.link) {
+	color: var(--color-accent);
+	text-decoration: underline;
+	text-decoration-thickness: 1.5px;
+	text-underline-offset: 0.2em;
+}
+
+.prose a:not(.btn):not(.link):hover {
+	color: var(--color-accent-strong);
+	text-decoration-thickness: 2.5px;
+}
+
+/* Literal code: commands, paths, identifiers */
+.token {
+	display: inline-block;
+	padding: 0.1em 0.5em;
+	border-radius: 0.4em;
+	background: var(--color-paper-3);
+	color: var(--color-ink);
+	font-family: var(--font-mono);
+	font-size: 0.86em;
+	font-weight: 500;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
+.on-night .token {
+	background: var(--color-night-3);
+	color: var(--color-on-night);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 1ms !important;
+		animation-delay: 0ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 1ms !important;
+	}
+}

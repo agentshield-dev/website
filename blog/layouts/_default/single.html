@@ -1,0 +1,44 @@
+{{ define "main" }}
+  <article class="article">
+    <header class="article-header">
+      <div class="article-header-inner">
+        <a class="back-link" href="{{ site.Home.RelPermalink }}"><span aria-hidden="true">←</span> Blog</a>
+        {{ with .Params.categories }}{{ with index . 0 }}<a class="article-category" href="{{ printf "categories/%s/" (. | urlize) | relURL }}">{{ . }}</a>{{ end }}{{ end }}
+        <h1>{{ .Title }}</h1>
+        {{ with .Description }}<p class="article-dek">{{ . }}</p>{{ end }}
+        {{ partial "post-meta.html" . }}
+      </div>
+    </header>
+
+    <div class="article-reading">
+      <div class="article-body">
+        {{ .Content }}
+      </div>
+    </div>
+
+    <footer class="article-footer">
+      {{ with .GetTerms "tags" }}
+        <div class="tag-list" aria-label="Tags">
+          {{ range . }}<a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>{{ end }}
+        </div>
+      {{ end }}
+      <div class="author-note">
+        <strong>{{ .Params.author | default site.Params.author }}</strong>
+        <p>Maintainers and contributors building agentshield in the open.</p>
+      </div>
+      {{ $related := site.RegularPages.Related . | first 3 }}
+      {{ with $related }}
+        <section class="related-posts" aria-labelledby="related-posts-title">
+          <h2 id="related-posts-title">Related posts</h2>
+          {{ range . }}<a href="{{ .RelPermalink }}">{{ .Title }} <span aria-hidden="true">→</span></a>{{ end }}
+        </section>
+      {{ end }}
+      {{ if or .NextInSection .PrevInSection }}
+        <nav class="article-nav" aria-label="More posts">
+          {{ with .NextInSection }}<a href="{{ .RelPermalink }}"><span>Newer</span><strong>{{ .Title }}</strong></a>{{ else }}<span></span>{{ end }}
+          {{ with .PrevInSection }}<a href="{{ .RelPermalink }}"><span>Older</span><strong>{{ .Title }}</strong></a>{{ end }}
+        </nav>
+      {{ end }}
+    </footer>
+  </article>
+{{ end }}

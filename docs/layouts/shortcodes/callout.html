@@ -1,0 +1,5 @@
+{{- /* A note set apart from the text. Usage: {{< callout title="Heads up" >}}Text.{{< /callout >}} */ -}}
+<aside class="callout">
+  {{ with .Get "title" }}<p class="callout-title">{{ . }}</p>{{ end }}
+  <div class="callout-body">{{ .Inner | markdownify }}</div>
+</aside>
