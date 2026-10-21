@@ -40,11 +40,92 @@ Next.js proxies `/docs/*` and `/blog/*` to their Hugo servers during local devel
 
 Docs are Markdown in `docs/content/`. Sections are folders with an `_index.md`, and `weight` in the front matter orders the sidebar and the previous and next links. A `callout` shortcode is available for notes. Docs describe what the product does today, so check a claim against the product repository before adding it.
 
-The product documentation was imported from `agentshield/docs/` on `main` at commit `946c6a3` on 2026-10-21, including its screenshots and design proposal. Overlapping concept and plugin guides have been consolidated into canonical references; their old URLs redirect to the owning pages. Setup workflows and the HTTP API catalog each have one owning page. Internal documentation links stay on this site; source-code links point to the product repository.
+The product documentation was imported from `agentshield/docs/` on `main` at commit `946c6a3` on 2026-10-21, including its screenshots. Overlapping concept and plugin guides have been consolidated into canonical references; their old URLs redirect to the owning pages. Setup workflows and the HTTP API catalog each have one owning page. Internal documentation links stay on this site; source-code links point to the product repository.
 
-This repository is the source of truth for product documentation. The corresponding removal from the product repository is on its `docs/move-to-website` branch. Update documentation here when product behavior changes; there is no automatic synchronization. Keep a topic's contract or procedure in one page and link to it from overviews and related guides.
+This repository is the source of truth for authored product documentation. Update it here when product behavior changes; prose is not synchronized from the source repository. Code-backed reference pages are refreshed separately by the workflow below. Keep a topic's contract or procedure in one page and link to it from overviews and related guides.
 
 Mermaid code fences render as diagrams using the locally installed `mermaid` package, bundled by Hugo only on pages that contain diagrams. Run `npm ci` before building the docs. Screenshots imported from the product live in `docs/static/images/`.
+
+## Generated reference docs
+
+The `Update Reference Documentation` workflow in `.github/workflows/update-ref-docs.yaml`
+generates code-backed pages from
+`agentshield-dev/agentshield`: CEL, graph and telemetry catalogs, CLI flags,
+environment lookups, HTTP routes and JSON types, Helm values, MCP tool schemas,
+and Go package API pages. The routing step puts `plugins-*.md` package pages in
+`docs/content/plugins/` without the `plugins-` prefix, replacing the corresponding
+provider pages. For example, `go/plugins-kubernetes.md` becomes `plugins/kubernetes.md`.
+Internal `plugins/*/api` packages are excluded: `go/plugins-*-api.md` pages are
+not published, and previously generated copies are removed on refresh.
+Other references stay in `docs/content/reference/`. The Go package index links
+to the plugin section rather than listing duplicate plugin pages. Existing
+provider titles, sidebar order, and aliases are retained; old generated URLs
+redirect to the plugin pages.
+
+Authored architecture, installation, security, plugin contract, style guide,
+tutorial, and plugin-writing pages remain separate and are never overwritten.
+Providers without generated output, such as Falco, also remain authored. To
+change a generated provider page, update its package comments in the source
+repository and regenerate. CLI defaults are
+source expressions; the HTTP reference is not an inferred OpenAPI contract.
+
+### Update through GitHub Actions
+
+After the workflow is merged into this repository's default branch, open
+**Actions > Update Reference Documentation > Run workflow** and set `source_ref`
+to an AgentShield release tag or full commit SHA. The selected revision must
+contain `cmd/agentshield-docs` and the `docs-reference` Make target; older releases
+do not. For the first run, use the source commit that introduces the exporter.
+The source repository is `agentshield-dev/agentshield`.
+
+With the GitHub CLI authenticated, the same operation is:
+
+```bash
+gh workflow run update-ref-docs.yaml --repo agentshield-dev/website -f source_ref=SOURCE_TAG_OR_SHA
+```
+
+The workflow checks out the website's `main` and the requested source revision,
+tests the exporter, generates the reference section, and builds the Hugo docs. It opens or
+updates one PR on `docs/update-reference`, recording the resolved source SHA.
+Only `docs/content/reference/` and `docs/content/plugins/` are included. Runs are serialized so they
+cannot update that branch concurrently; rerunning with identical output opens
+no new PR. Review and merge normally; the existing deployment workflow publishes
+the committed pages. Normal builds do not fetch source code or require Go.
+
+Enable **Settings > Actions > General > Workflow permissions > Allow GitHub
+Actions to create and approve pull requests**. The workflow requests
+`contents: write` and `pull-requests: write` and uses this website repository's
+`GITHUB_TOKEN`; no personal access token or cross-repository write credentials
+are needed. Organization policy must allow these permissions. PRs created with
+`GITHUB_TOKEN` generally do not trigger ordinary PR workflows, so this workflow
+runs exporter tests and the docs build before creating the PR. It does not merge
+or approve PRs automatically, and there is no schedule advancing docs past a
+deliberately selected version.
+
+### Update locally
+
+With a sibling AgentShield checkout and its required Go toolchain, run from
+this website repository:
+
+```bash
+reference_output="$(mktemp -d)"
+make -C ../agentshield docs-reference DOCS_OUT="$reference_output"
+npm run import:reference -- --source "$reference_output"
+npm run build:docs
+```
+
+Local generation includes uncommitted source changes. Review the pages and open
+a normal website PR, noting the source revision used. Keep the generated
+`.agentshield-docs.json` manifests in both `reference/` and `plugins/` with the
+pages: they enable safe removal of obsolete generator-owned files without
+removing authored guides. Imports refuse authored-file collisions by default.
+The initial migration explicitly replaced existing provider pages; subsequent
+refreshes do not need `--replace-authored-plugins`. Never use that migration
+option for routine updates. Regenerate pages instead of editing them, and link
+from authored guides to `/docs/plugins/` or the relevant reference page.
+
+Run `npm run test:reference-import` to check routing, ownership protection,
+obsolete-page cleanup, and repeatable output.
 
 ## Writing blog posts
 

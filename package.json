@@ -16,6 +16,8 @@
     "deploy:cloudflare": "npm run build:cloudflare && wrangler pages deploy",
     "new:post": "hugo new content --source blog --kind posts",
     "capture:product": "node scripts/capture-product.mjs",
+    "import:reference": "node scripts/import-reference-docs.mjs",
+    "test:reference-import": "node --test scripts/import-reference-docs.test.mjs",
     "start": "next start",
     "lint": "eslint",
     "check": "npm run lint && npm run build:all"
