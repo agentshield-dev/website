@@ -8,7 +8,7 @@ weight: 70
 ---
 Telemetry is how AgentShield learns what actually talks to what. Traffic records arrive at high volume, so they never pass through the discovery collections or the change feed. They go through their own pipeline, and only small per-minute summaries reach the graph.
 
-This page is the reference for the telemetry pipeline, the normalized event schema, graph rollups, and failure behavior. Code: `pkg/telemetry`. Provider-specific mappers are documented on their plugin pages: [Istio](/docs/plugins/istio/#telemetry), [AWS](/docs/plugins/aws/#vpc-flow-log-telemetry), [Cilium](/docs/plugins/cilium/#hubble-flows), [agentgateway](/docs/plugins/agentgateway/#access-logs).
+This page is the reference for the telemetry pipeline, the normalized event schema, graph rollups, and failure behavior. Code: `pkg/telemetry`. Provider-specific mappers are documented on their plugin pages: [Istio](/docs/plugins/istio/#telemetry), [AWS](/docs/plugins/aws/#telemetry), [Cilium](/docs/plugins/cilium/#telemetry), [agentgateway](/docs/plugins/agentgateway/#telemetry).
 
 ## Three representations
 
@@ -69,7 +69,7 @@ The only OTLP mapper today is the Istio waypoint access-log mapper. See [Istio t
 
 ### Provider-native receivers
 
-A plugin may receive a provider's native format directly when that avoids extra infrastructure. The receiver must authenticate the provider, validate the configured source independently of payload fields, limit and decode the envelope, and produce normalized events into the same pipeline. The AWS VPC Flow Log receiver for Amazon Data Firehose is the only one today; see [AWS](/docs/plugins/aws/#vpc-flow-log-telemetry).
+A plugin may receive a provider's native format directly when that avoids extra infrastructure. The receiver must authenticate the provider, validate the configured source independently of payload fields, limit and decode the envelope, and produce normalized events into the same pipeline. The AWS VPC Flow Log receiver for Amazon Data Firehose is the only one today; see [AWS](/docs/plugins/aws/#telemetry).
 
 Cilium Hubble flows and agentgateway access logs have normalization functions, but no transport is wired into the binary yet.
 

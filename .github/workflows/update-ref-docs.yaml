@@ -37,7 +37,7 @@ jobs:
       - name: Check out AgentShield
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          repository: solo-io/agentshield
+          repository: agentshield-dev/agentshield
           ref: ${{ inputs.source_ref }}
           path: agentshield
           persist-credentials: false
@@ -51,14 +51,11 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: agentshield/go.mod
-          cache-dependency-path: agentshield/go.mod
+          cache-dependency-path: agentshield/go.sum
 
       - name: Test exporter
         working-directory: agentshield
         run: go test -race ./cmd/agentshield-docs
-
-      - name: Generate reference
-        run: make -C ../agentshield docs-reference DOCS_OUT="$PWD/docs/content/reference"
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -84,6 +81,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test reference routing
+        run: npm run test:reference-import
+
+      - name: Generate and route reference
+        env:
+          DOCS_OUTPUT: ${{ runner.temp }}/agentshield-reference
+        run: |
+          make -C ../agentshield docs-reference DOCS_OUT="$DOCS_OUTPUT"
+          npm run import:reference -- --source "$DOCS_OUTPUT"
+
       - name: Validate documentation
         run: npm run build:docs
 
@@ -95,13 +102,17 @@ jobs:
           base: main
           branch: docs/update-reference
           delete-branch: true
-          add-paths: docs/content/reference/cel.md
-          commit-message: "docs: refresh generated CEL reference"
-          title: "docs: refresh generated CEL reference"
+          add-paths: |
+            docs/content/reference
+            docs/content/plugins
+          commit-message: "docs: refresh generated references"
+          title: "docs: refresh generated references"
           body: |
-            Regenerated the CEL reference from [AgentShield commit `${{ steps.source.outputs.sha }}`](https://github.com/solo-io/agentshield/commit/${{ steps.source.outputs.sha }}).
+            Regenerated all code-backed references from [AgentShield commit `${{ steps.source.outputs.sha }}`](https://github.com/agentshield-dev/agentshield/commit/${{ steps.source.outputs.sha }}).
 
             Requested source ref: `${{ inputs.source_ref }}`.
 
-            Validation: exporter race tests and `npm run build:docs` passed.
-            Only the generated CEL reference page is included; authored documentation is unchanged.
+            Validation: exporter race tests, reference routing tests, and `npm run build:docs` passed.
+            Includes CEL, graph/telemetry catalogs, CLI flags, environment variables, HTTP routes and JSON types, Helm values, MCP tools, and Go package APIs.
+            Plugin package pages are generated into `docs/content/plugins/`; other references stay in `docs/content/reference/`.
+            Both generated ownership manifests are included. Authored tutorials, plugin-writing guides, and unmatched providers are preserved.
