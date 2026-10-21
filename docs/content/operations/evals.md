@@ -27,6 +27,8 @@ Every campaign requires telemetry backing. The earliest phase that can raise a f
 
 The disposable kind cluster runs Cilium with Hubble, MetalLB, Gateway API, Istio ambient, agentgateway, an OpenTelemetry Collector, PostgreSQL, and agentshield. It also installs Falco, which posts shell alerts to the collector. agentgateway sits in front of the model, and the key is stored as a secret there. The preflight check fails without it.
 
+You need Docker, kind, kubectl, helm, jq, sha256sum, Go, and enough local resources for the multi-component cluster. Run these commands from the product source checkout. Build the embedded UI with `make ui` before `make eval-up` if you want to inspect the explorer.
+
 Create the cluster, verify it, and run all campaigns with `gpt-6-astra`:
 
 ```sh
@@ -35,6 +37,14 @@ make eval-up
 make eval-check
 make eval-run
 ```
+
+The cluster uses its own kubeconfig at `evals/output/kubeconfig`; your current kubectl context is not changed. To inspect its graph, run:
+
+```sh
+kubectl --kubeconfig evals/output/kubeconfig -n agentshield-system port-forward service/agentshield 8088:8088
+```
+
+Open `http://127.0.0.1:8088`. Live remediation is disabled because the in-cluster service listens on a non-loopback address.
 
 `make eval-run` makes real model calls, billed to your key. Run selected campaigns, or the model matrix:
 

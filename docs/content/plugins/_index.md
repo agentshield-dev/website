@@ -4,18 +4,18 @@ description: The plugins in the box, what each reads, and what is planned.
 weight: 3
 ---
 
-A plugin is a Go package for one system. It reads state, takes in telemetry, publishes what it finds into the graph, and can declare the fixes it knows how to apply. If a system can report changes, it can be a plugin. To build one, see [Write a plugin](write-a-plugin/).
+A plugin is a Go package for one system. It reads state, takes in telemetry, publishes what it finds into the graph, and can declare the fixes it knows how to apply. If a system can report changes, it can be a plugin. To build one, see [Write a plugin](/docs/plugins/tutorial/).
 
 ## In the box
 
-| Plugin | Discovery | Telemetry | Can apply |
-| --- | --- | --- | --- |
-| [Kubernetes](kubernetes/) | Yes | No | NetworkPolicy ingress isolation for a Pod or a Service |
-| [Istio](istio/) | Yes | Yes | STRICT mutual TLS with PeerAuthentication |
-| [Cilium](cilium/) | Yes | Not yet | CiliumNetworkPolicy ingress isolation |
-| [agentgateway](agentgateway/) (early) | Yes | Not yet | Nothing |
-| [Falco](falco/) (early) | No | Yes | Nothing |
-| [AWS](aws/) (early) | Yes | Yes | Nothing |
+| Plugin | Role | Discovery | Telemetry | Primary contribution | Can apply |
+| --- | --- | --- | --- | --- | --- |
+| [Kubernetes](kubernetes/) | Source | Yes | No | `inventory` | NetworkPolicy ingress isolation for a Pod or a Service |
+| [Istio](istio/) | Semantic, telemetry mapper | Yes | Yes | `semantics` | STRICT mutual TLS with PeerAuthentication |
+| [Cilium](cilium/) | Semantic | Yes | Not yet | `cni-semantics` | CiliumNetworkPolicy ingress isolation |
+| [agentgateway](agentgateway/) (early) | Semantic | Yes | Not yet | `semantics` | Nothing |
+| [Falco](falco/) (early) | Telemetry mapper | No | Yes | Host-owned `rollups` | Nothing |
+| [AWS](aws/) (early) | Source, telemetry receiver | Yes | Yes | `inventory` | Nothing |
 
 Cilium and agentgateway have normalizers for Hubble flows and access logs, but no transport feeds them yet.
 
@@ -41,7 +41,7 @@ See [agentgateway](agentgateway/).
 
 ### Falco
 
-Early. It maps Falco interactive-shell alerts that your OpenTelemetry Collector forwards, so a Pod that opens a shell gains an `executes` edge to the `shell` process class, and a [detection rule](../concepts/rules/) can match on it. It reads no provider API. See [Falco](falco/).
+Early. It maps Falco interactive-shell alerts that your OpenTelemetry Collector forwards, so a Pod that opens a shell gains an `executes` edge to the `shell` process class, and a [detection rule](/docs/architecture/detection-rules/) can match on it. It reads no provider API. See [Falco](falco/).
 
 ### AWS
 

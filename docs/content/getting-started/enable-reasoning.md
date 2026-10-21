@@ -13,7 +13,7 @@ Findings need a model. Two features call one, and both are off by default.
 
 Setting a model endpoint alone enables neither. Detection runs when either feature is on, and it never calls a model itself. An active rule's match is a finding with no model call. Without either feature you still get discovery, the graph and its change history, telemetry rollups, and the explorer and API for browsing them. You get no findings, so there is nothing to remediate.
 
-Your graph data is sent to the model endpoint. Read [What the model sees](../../operations/security/#what-the-model-sees) first.
+Your graph data is sent to the model endpoint. Read [Model endpoints](../../operations/security/#model-endpoints) first.
 
 ## Turn on agentic investigation
 
@@ -35,7 +35,7 @@ make run
 
 Use the same endpoint and key as above. For Anthropic, set `ANTHROPIC_API_KEY` and pass `--model-provider anthropic`, which defaults the endpoint to `https://api.anthropic.com`. Anthropic supports only rule authoring and cannot be combined with agentic investigation.
 
-A draft starts after a baseline window, 6 hours by default (`--deployment-rule-baseline-window`), and appears in the explorer's Rules view for review. Click **Author now** to skip the wait. See [Detection rules](../../concepts/rules/#deployment-rules).
+A draft starts after a baseline window, 6 hours by default (`--deployment-rule-baseline-window`), and appears in the explorer's Rules view for review. Click **Author now** to skip the wait. See [Detection rules](/docs/architecture/detection-rules/#model-authored-deployment-rules).
 
 ## Choose a model
 
@@ -71,6 +71,6 @@ With the defaults, only batching and deduplication limit spend. Rule authoring i
 
 ## What happens next
 
-Each graph change that matters is written to a transactional change feed. Detection checks whether it is new, and records what it found. A match of an active rule becomes a finding. An eligible novelty signal is queued for investigation, and a model response becomes a finding only if it passes validation. See [Detection](../../concepts/detection/) and [Reasoning](../../concepts/reasoning/).
+Each graph change that matters is written to a transactional change feed. Detection checks whether it is new, and records what it found. A match of an active rule becomes a finding. An eligible novelty signal is queued for investigation, and a model response becomes a finding only if it passes validation. See [Detection](/docs/architecture/change-feed-and-reasoning/) and [Reasoning](/docs/architecture/change-feed-and-reasoning/).
 
-Findings appear in the explorer with their evidence. For findings from an investigation, the fixes you can apply appear next to them. See [Remediation](../../concepts/remediation/).
+Findings appear in the explorer with their evidence. For findings from an investigation, the fixes you can apply appear next to them. See [Remediation](/docs/architecture/remediation/).

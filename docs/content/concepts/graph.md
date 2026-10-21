@@ -79,4 +79,4 @@ A declared policy is not assumed to be enforced. `state` says whether a fact is 
 
 Runtime evidence, such as `process-exec` telemetry and the `executes` relationship, is provider-native and carries no envelope. An observation does not establish an exposure or governance fact. Detection rules and reasoning interpret it.
 
-For the full model, see `docs/concepts/data-model.md` and `docs/concepts/security-semantics.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/concepts).
+For the full model, see [Data model](/docs/concepts/data-model/) and [Security semantics](/docs/concepts/security-semantics/).

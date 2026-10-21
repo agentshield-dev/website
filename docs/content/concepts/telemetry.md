@@ -81,4 +81,4 @@ The API queue holds up to 100,000 events by default. When it is full, producers 
 
 The path from a collector to the service has no production authentication. Bind the listener to loopback, or place it behind an authenticated gateway. The AWS Firehose route is the exception: it checks the delivery stream ARN and an access key, and still belongs behind HTTPS. See [AWS](../../plugins/aws/).
 
-For the full schema, see `docs/architecture/telemetry.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/architecture).
+For the full schema, see the [telemetry reference](/docs/architecture/telemetry/).

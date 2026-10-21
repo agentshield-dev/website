@@ -6,4 +6,11 @@ weight: 2
 
 Agentshield is a pipeline around one graph. Detection is deterministic, a model investigates only what detection hands it, the checks after the model are deterministic, and a person decides what gets applied.
 
-Start with [Architecture](architecture/) for the whole path, then read the part you need.
+Start with [Architecture](/docs/architecture/) for the whole path, then read the part you need.
+
+## Reference
+
+- [What agentshield does](overview/)
+- [Glossary](glossary/)
+- [Data model](data-model/)
+- [Security semantics](security-semantics/)

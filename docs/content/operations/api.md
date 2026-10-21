@@ -8,12 +8,14 @@ The explorer is a client of this API, and your own tooling can be too. It is a d
 
 Read endpoints return JSON. An error is `{"error": "<action>: <reason>"}`. The API sets a strict Content Security Policy, `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff` on every response.
 
+For `4xx` responses the reason says what is wrong with the request. For `5xx` responses it is generic (for example `internal server error; see the server log`), apart from fixed messages such as `graph is not materialized`; the details go to the server log.
+
 ## Health
 
 | Endpoint | Meaning |
 | --- | --- |
 | `GET /healthz` | `204` whenever the process is up. |
-| `GET /readyz` | `204` once PostgreSQL answers and a graph has been materialized. Otherwise `503`. |
+| `GET /readyz` | `204` when PostgreSQL answers a ping and the graph revision can be read. It does not wait for publication or discovery sync; graph routes return `503` until a graph is published. |
 
 ## Graph
 
@@ -24,6 +26,8 @@ Read endpoints return JSON. An error is `{"error": "<action>: <reason>"}`. The A
 | `GET /api/v1/manifest` | A manifest of the contribution versions behind the current graph, for reproducible analysis. |
 | `GET /api/v1/neighborhood` | A bounded neighborhood around `resourceId`. `depth` defaults to 2, `limit` to 500, and `direction` to `both`. |
 | `GET /api/v1/events` | A server-sent event stream. Each `graph` event carries the new `sha256` and `generatedAt`. |
+
+The event stream sends the current digest on connect, polls a graph revision every 500 ms, and compiles the full graph only when it changes. A keepalive comment is sent every 25 seconds. The stream is exempt from the server's 30-second write timeout; each write has its own 30-second deadline so stalled clients are dropped.
 
 ## Catalog
 
@@ -44,13 +48,27 @@ Lists are paginated with `limit`, from 1 to 100 and 25 by default, and an opaque
 | `GET /api/v1/findings` | Findings, newest first, with `total` and `nextCursor`. Filters: `status` (`active` or `invalidated`), `severity`, `category`, and `affectedEntityId`. `limit` is 1 to 100 and defaults to 50. |
 | `GET /api/v1/findings/{findingID}` | One finding, including its remediation proposals. |
 
-The three remediation endpoints live under a finding. See [Remediation](../../concepts/remediation/#http-api).
+The three remediation endpoints live under a finding. See [Remediation](#remediation).
 
 A finding's `origin` is `agentic_investigation` or `detection_rule`. A rule finding has the category `detection_rule_match`, names the rule and its revision, and carries no remediation proposals.
 
+## Remediation
+
+All three endpoints belong to a finding and one of its proposals. The [remediation lifecycle](/docs/architecture/remediation/) covers planning, human approval, and verification.
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /api/v1/findings/{findingID}/remediations/{proposalID}/candidates` | List the provider, source, and action candidates that are live now. |
+| `POST /api/v1/findings/{findingID}/remediations/{proposalID}/prepare` | Plan the chosen action and run the dry run. The body names `providerId`, `sourceId`, and `actionId`. |
+| `POST /api/v1/findings/{findingID}/remediations/{proposalID}/approve` | Execute the prepared plan and verify the result. The body carries the `planId`. |
+
+Request bodies are JSON, limited to 64 KiB, and reject unknown fields. An invalidated finding returns a conflict, and an unknown proposal returns not found. Approving a plan again returns the stored result instead of writing twice. A verification that is not satisfied is reported as an error.
+
+The routes are always registered and return `503 Service Unavailable` unless live remediation is enabled. Prepared actions and approvals live in process memory; prepare again after a restart.
+
 ## Rules
 
-The explorer's Rules view uses these routes. See [Detection rules](../../concepts/rules/#review).
+The explorer's Rules view uses these routes. See [Detection rules](/docs/architecture/detection-rules/#running-and-reviewing-deployment-rules).
 
 | Endpoint | Returns or does |
 | --- | --- |
@@ -66,7 +84,7 @@ The two `POST` routes change detection and call the model. They answer only on a
 
 | Endpoint | Accepts |
 | --- | --- |
-| `POST /v1/logs` | OTLP/HTTP logs, protobuf or JSON, optionally gzip-compressed. See [Telemetry](../../concepts/telemetry/). |
+| `POST /v1/logs` | OTLP/HTTP logs, protobuf or JSON, optionally gzip-compressed. See [Telemetry](/docs/architecture/telemetry/). |
 | `POST /v1/aws/firehose/vpc-flow-logs` | VPC Flow Logs from Amazon Data Firehose. Present only with `--aws-firehose-stream-arn`. See [AWS](../../plugins/aws/). |
 
 ## The explorer

@@ -14,7 +14,7 @@ The demo runs the real explorer against a fake backend that lives in your browse
 ## Start it
 
 ```sh
-git clone https://github.com/agentshield-dev/agentshield.git
+git clone https://github.com/solo-io/agentshield.git
 cd agentshield
 make demo
 ```
@@ -30,7 +30,11 @@ The playground starts with a clean findings view.
 3. Click **Prepare** on a remediation to see the exact change, then **Approve and apply**. The simulated graph updates and the finding is invalidated.
 4. Click **Reset** to return to the clean environment.
 
-The fake backend follows the real API's filtering, paging, errors, and event stream, over an in-memory demo environment: a shop running on Kubernetes and Istio. `make ui-storybook` renders individual views and states, such as a fresh install or an unreachable service.
+![The approval sheet showing the provider, target Pod, proposed NetworkPolicy, and approval controls.](/docs/images/ui-remediation-approval.png)
+
+*The remediation approval sheet, shown with Storybook demo data.*
+
+The fake backend follows the real API's filtering, paging, errors, and event stream, over an in-memory demo environment: a shop running on Kubernetes and Istio. For isolated component views, including a fresh install or an unreachable service, see [Storybook and the fake backend](/docs/development/testing/#storybook-and-the-fake-backend).
 
 ## Next
 

@@ -1,22 +1,29 @@
 ---
 title: Istio
-description: How the Istio plugin describes mesh security in the graph, how to send it waypoint access logs, and the mutual TLS fix it can apply.
+description: >-
+  How the Istio plugin describes mesh security in the graph, how to send it
+  waypoint access logs, and the mutual TLS fix it can apply.
 weight: 2
 ---
+The `istio` plugin describes Istio security configuration in the graph: authorization policy, mTLS policy, ambient enrollment, waypoints, ServiceEntries, and VirtualService routing. It also maps Istio waypoint access logs into telemetry and provides the PeerAuthentication remediation action.
 
-The Istio plugin describes Istio security configuration in the graph: authorization policy, mutual TLS policy, ambient enrollment, waypoints, ServiceEntries, and VirtualService routing. It also maps Istio waypoint access logs into telemetry and provides the PeerAuthentication remediation action.
+It is a semantic plugin: it reads Kubernetes collections and never opens its own Kubernetes watch.
 
-It reads Kubernetes collections and never opens its own Kubernetes watch.
+Code: `plugins/istio`.
 
-| Detail | Value |
+## Summary
+
+| | |
 | --- | --- |
-| Role | Semantic plugin, telemetry mapper, and remediation provider |
-| Authority | `--istio-cluster-id`. Network destinations use `--istio-network-id`. |
+| Plugin ID, version | `istio`, `0.0.1` |
+| Role | Semantic plugin, telemetry mapper, remediation provider |
+| Authority | `--istio-cluster-id`; network destinations use `--istio-network-id` |
 | Source ID | `--istio-source-id` |
 | Mesh root namespace | `--istio-root-namespace` (default `istio-system`) |
-| Contribution | `semantics`, plus telemetry rollups in `rollups` |
-
-Set `--istio-cluster-id` and `--istio-source-id` to the Kubernetes plugin's values so Istio assertions land on the same objects. See [Kubernetes](../kubernetes/).
+| Identity schemes | Uses `kubernetes.io/v1, Kind=Object` and `agentshield.io/v1, Kind=NetworkDestination`; registers none of its own |
+| Contribution | `semantics`; telemetry rollups in `rollups` |
+| Collections consumed | The resources below, plus `kubernetes/resource-coverage` |
+| Collection published | `istio/projection` |
 
 ## Kubernetes resources requested
 
@@ -24,30 +31,47 @@ Set `--istio-cluster-id` and `--istio-source-id` to the Kubernetes plugin's valu
 | --- | --- | --- |
 | `istio-core-v1` | namespaces, pods, services | Yes |
 | `istio-workloads-v1` | deployments | Yes |
-| `istio-gateway-v1` | Gateway API gateways | No |
+| `istio-gateway-v1` | `gateway.networking.k8s.io/v1` gateways | No |
 | `istio-security-v1` | `security.istio.io/v1` authorizationpolicies, peerauthentications | No |
 | `istio-networking-v1` | `networking.istio.io/v1` serviceentries, virtualservices | No |
 
 If the Istio CRDs are not installed, coverage is `unsupported` and the plugin publishes what it can. Missing coverage does not mean there is no policy.
 
-## What goes in the graph
+## Graph output
 
-| Output | Meaning |
+| Rule ID | Output |
 | --- | --- |
-| Workload `governed-by` AuthorizationPolicy | Authorization governance, with a posture facet on the policy |
-| Workload `governed-by` PeerAuthentication | Transport-authentication governance, with an `istio-mtls` facet on the target |
-| `istio-data-plane` facet on enrolled workloads | Ambient enrollment intent |
-| Workload `governed-by` waypoint Gateway | An observed binding with `effect=unknown` |
-| ServiceEntry `exposes` network destination | One edge for each host, with endpoint counts and address classes, never endpoint values |
-| VirtualService `exposes` destination | Route count, subsets, ports, and mirror flag |
+| `istio.authorization-policy` | `istio/authorizationpolicy` resource |
+| `istio.authorization-policy-target` | Workload `governed-by` AuthorizationPolicy, with security semantics (governance / authorization) |
+| `istio.authorization-policy-posture` | `authorization-posture` facet on the policy |
+| `istio.peer-authentication-target` | Workload `governed-by` PeerAuthentication, with security semantics (governance / transport-authentication) |
+| `istio.peer-authentication-facet` | `istio-mtls` facet, key `peerauthentication/<namespace>/<name>`, on the target |
+| `istio.ambient-intent` | `istio-data-plane` facet, key `ambient`, on enrolled workloads |
+| `istio.waypoint-association` | Workload `governed-by` waypoint Gateway (observed binding, `effect=unknown`) |
+| `istio.serviceentry` | `istio/serviceentry` resource |
+| `istio.serviceentry-exposes-host` | ServiceEntry `exposes` network destination for each host |
+| `istio.serviceentry-binding` | `serviceentry-binding` facet: endpoint counts and address classes, never endpoint values |
+| `istio.virtualservice-destination` | VirtualService `exposes` destination, with route count, subsets, ports, and mirror flag |
 
-The ambient facet records enrollment intent and waypoint binding. It does not claim that traffic is encrypted or that policy is enforced. VirtualService forwarding and ServiceEntry declarations stay provider-native.
+Targeting follows Istio: a policy in the root namespace without a selector governs every Namespace; one with a workload selector governs matching Pods in every namespace, as Istio looks up root-namespace policies for every workload. A selector policy elsewhere governs matching Pods in its own namespace only.
+
+`istio-data-plane` records ambient enrollment intent and waypoint binding. It does not claim that traffic is encrypted or that policy is enforced. `istio-mtls` records one PeerAuthentication declaration.
+
+VirtualService forwarding, ServiceEntry declarations, unresolved waypoint or ambient intent, and telemetry stay provider-native; see the [security semantics coverage table](/docs/concepts/security-semantics/#current-coverage-by-provider).
+
+## Lifecycle
+
+The plugin subscribes to each requested collection and the coverage collection, builds a local cache from replay, waits for every `sync` marker, then projects and replaces `semantics`. Each later change re-projects the cache and publishes a new generation. Malformed objects fail the projection and keep the previous contribution. An unexpected subscription closure stops the plugin with an error.
 
 ## Telemetry
 
-The Istio mapper turns waypoint access logs into `active-probe` events. It matches OTLP records whose attribute `agentshield.telemetry.kind` is `active-probe`. The subject is the caller and the object is the destination.
+The Istio mapper turns waypoint access logs into `active-probe` telemetry events. It matches OTLP records whose attribute `agentshield.telemetry.kind` is `active-probe`. Subject is the caller and object is the destination.
 
-Istio's default access logs do not carry these attributes. You need a custom `envoyOtelAls` extension provider in `meshConfig` that emits the `agentshield.*` attributes, and a `Telemetry` resource that turns the provider on for your waypoints. Your collector then forwards the logs to agentshield with an OTLP/HTTP exporter. See [Telemetry](../../concepts/telemetry/).
+Istio's default access logs do not carry these attributes. You need a custom `envoyOtelAls` extension provider in `meshConfig` that emits the `agentshield.*` attributes below, and a `Telemetry` resource that turns that provider on for your waypoints.
+
+### Example waypoint configuration
+
+`evals/config/istio-ambient.yaml` configures an Envoy OpenTelemetry access-log provider that emits these attributes from Istio peer metadata:
 
 ```yaml
 meshConfig:
@@ -76,7 +100,9 @@ meshConfig:
             agentshield.probe.http_statuses: '%RESPONSE_CODE%'
 ```
 
-Turn the provider on for a waypoint with a `Telemetry` resource:
+The collector then forwards these logs to AgentShield with an OTLP/HTTP exporter (see [Telemetry](/docs/architecture/telemetry/#otlp-logs)). Restrict who can send to the collector, because anyone who can set `agentshield.telemetry.kind` can route records to this mapper.
+
+The evaluation harness enables the provider per namespace with a `Telemetry` resource that targets the waypoint (`evals/observation_istio.go`):
 
 ```yaml
 apiVersion: telemetry.istio.io/v1
@@ -92,30 +118,43 @@ spec:
     - {name: agentshield-otel}
 ```
 
-Restrict who can send to the collector, because anyone who can set `agentshield.telemetry.kind` can route records to this mapper.
+### Limitation: only Deployment callers resolve
+
+Istio peer metadata gives the caller's workload name but not its UID or owner kind, so the example hard-codes `agentshield.subject.k8s.kind: Deployment`. The mapper looks up that kind, namespace, and name in its Kubernetes cache. A caller run by a StatefulSet, DaemonSet, Job, or bare Pod does not match a Deployment, so its record is rejected and counted in the OTLP partial-success response.
+
+Name lookup only covers the kinds this plugin caches: Namespaces, Pods, Services, Deployments, Gateway API Gateways, AuthorizationPolicies, PeerAuthentications, ServiceEntries, and VirtualServices. A sender that supplies `agentshield.subject.k8s.uid` (or `agentshield.object.k8s.uid`) can name any kind, because a UID needs no lookup.
+
+### Limitation: short Service names may not resolve
+
+In the ambient eval cluster, the waypoint's upstream peer metadata did not name the destination Service. The mapper then falls back to `agentshield.object.authority`, which resolves only `<service>.<namespace>.svc.cluster.local[:port]`. A request addressed to a short name such as `http://catalog:8080` therefore cannot be resolved and is rejected, counted in the OTLP partial-success response. The rule evals address Services by fully qualified name for this reason.
 
 ### Attributes
 
-Each endpoint needs an API version and kind, plus either a UID or a namespace and name. With a namespace and name, the mapper resolves the UID from its Kubernetes cache. It never guesses, so a record with missing required fields is rejected.
+Each endpoint needs an API version and kind, plus either a UID or a namespace and name. With namespace and name, the mapper resolves the UID from its Kubernetes cache. It never guesses: missing required fields reject the record.
 
-| Attribute | Notes |
-| --- | --- |
-| `agentshield.telemetry.kind` | Required. Must be `active-probe`. |
-| `agentshield.event.id` | Required. Stable across retries. |
-| `agentshield.operation` | Required, for example `GET /allowed`. |
-| `agentshield.coverage` | Required, for example `ambient-waypoint`. |
-| `agentshield.subject.k8s.api_version`, `.kind` | Required. The `.uid` is preferred, otherwise `.namespace` and `.name`. |
-| `agentshield.object.k8s.api_version`, `.kind` | Required. The `.uid` is preferred, otherwise `.namespace` and `.name`. |
-| `agentshield.object.authority` | Optional. A `<service>.<namespace>.svc.cluster.local[:port]` value resolves the Service when peer metadata lacks it. |
-| `agentshield.outcome` | Optional, `allowed` or `denied`. Derived from the HTTP status when absent. |
-| `agentshield.probe.http_statuses` | Optional. `403` means `denied`. |
-| `agentshield.evidence.id`, `agentshield.count` | Optional. The evidence ID defaults to the event ID and the count to 1. |
-
-### Limitations
-
-- **Only Deployment callers resolve.** Istio peer metadata gives the caller's workload name but not its UID or owner kind, so the example hard-codes `Deployment`. A caller run by a StatefulSet, DaemonSet, Job, or bare Pod does not match, and its record is rejected and counted in the OTLP partial-success response. A sender that supplies a UID can name any kind.
-- **Short Service names may not resolve.** When the waypoint's upstream peer metadata does not name the Service, the mapper falls back to `agentshield.object.authority`, which resolves only the fully qualified `<service>.<namespace>.svc.cluster.local[:port]`. A request to a short name such as `http://catalog:8080` is rejected.
+| Attribute | Type | Notes |
+| --- | --- | --- |
+| `agentshield.telemetry.kind` | string | **Required.** Must be `active-probe`. |
+| `agentshield.event.id` | string | **Required.** Stable across retries, together with the timestamp. |
+| `agentshield.evidence.id` | string | Optional. Defaults to the event ID. |
+| `agentshield.operation` | string | **Required.** For example `GET /allowed`. |
+| `agentshield.outcome` | string | Optional, `allowed` or `denied`. Derived from the HTTP status when absent. |
+| `agentshield.coverage` | string | **Required.** For example `ambient-waypoint`. |
+| `agentshield.count` | integer or string | Optional positive count. Default 1. |
+| `agentshield.subject.k8s.api_version` | string | **Required.** |
+| `agentshield.subject.k8s.kind` | string | **Required.** |
+| `agentshield.subject.k8s.uid` | string | Preferred when available. `-` counts as absent. |
+| `agentshield.subject.k8s.namespace`, `agentshield.subject.k8s.name` | string | Used when the UID is absent. |
+| `agentshield.object.k8s.api_version` | string | **Required.** |
+| `agentshield.object.k8s.kind` | string | **Required.** |
+| `agentshield.object.k8s.uid` | string | Preferred when available. `-` counts as absent. |
+| `agentshield.object.k8s.namespace`, `agentshield.object.k8s.name` | string | Used when the UID is absent. |
+| `agentshield.object.authority` | string | Optional. A `<service>.<namespace>.svc.cluster.local[:port]` value resolves the Service when peer metadata lacks it. |
+| `agentshield.probe.http_statuses` | string | Optional HTTP status. `403` means `denied`; anything else means `allowed` when no outcome is set. |
+| `agentshield.probe.expected_status` | string | Optional. If it equals the actual status, `probe/result` is `pass`. |
+| `agentshield.probe.result` | string | Optional. Defaults to `observed`. Separate from outcome. |
 
 ## Remediation
 
-`peer-authentication/v1` implements `transport.require-mutual-tls` for a Pod. It labels the Pod with `agentshield.io/remediation-target` and creates a `STRICT` PeerAuthentication that selects the label. An existing PeerAuthentication that selects the Pod is a conflict, and an AuthorizationPolicy is not. The process needs `update` on Pods and `create` on PeerAuthentications. See [Remediation](../../concepts/remediation/).
+Action `peer-authentication/v1` implements `transport.require-mutual-tls` for `kubernetes/pod` targets. It labels the Pod with `agentshield.io/remediation-target` and creates a `STRICT` PeerAuthentication that selects the label. Existing PeerAuthentications that select the Pod are conflicts; AuthorizationPolicies are not. The process needs `update` on Pods and `create` on PeerAuthentications. See [Remediation](/docs/architecture/remediation/).
+The Istio flags are plugin-prefixed. Set `--istio-cluster-id` to the Kubernetes source's cluster ID when Istio assertions should refer to the same Kubernetes objects. `--istio-source-id` identifies the Istio producer independently of the Kubernetes source.

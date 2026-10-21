@@ -70,4 +70,4 @@ The remediation endpoints answer only when the service has live discovery and a 
 
 Prepared actions and approvals live in process memory. After a restart, prepare again. The process needs RBAC permission to write NetworkPolicies, CiliumNetworkPolicies, PeerAuthentications, and Pod labels for these actions to succeed. A production deployment would need authentication, a durable approval audit, CSRF protection, cleanup, and coordination, none of which exist yet. Provider credentials and permissions stay host configuration and never enter a suggestion or a proposal.
 
-For the full contract, see `docs/architecture/remediation.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/architecture).
+For the full contract, see the [remediation reference](/docs/architecture/remediation/).

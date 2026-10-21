@@ -1,34 +1,48 @@
 ---
 title: AWS
-description: What the AWS plugin reads, the permissions and event infrastructure it needs, how VPC Flow Logs arrive, and what it leaves out.
+description: >-
+  What the AWS plugin reads, the permissions and event infrastructure it needs,
+  how VPC Flow Logs arrive, and what it leaves out.
 weight: 6
 ---
+The `aws` plugin inventories EC2 instances, Elastic Network Interfaces (ENIs), and Security Groups in one region, and can receive VPC Flow Logs directly from Amazon Data Firehose. It lets AgentShield connect cloud network policy to Kubernetes Nodes and to observed traffic.
 
-The AWS plugin is early, version 0.1.0. It is a regional EC2 source. It inventories EC2 instances, Elastic Network Interfaces (ENIs), and Security Groups, and it can take VPC Flow Logs straight from Amazon Data Firehose. It does not inventory VPCs, subnets, route tables, internet or NAT gateways, network ACLs, or IAM, and it has no remediation actions.
+It does not inventory VPCs, subnets, route tables, internet or NAT gateways, network ACLs, or IAM, and it has no remediation actions.
 
-## Run it
+Code: `plugins/aws`.
 
-With `AGENTSHIELD_DATABASE_URL` set as in [Run locally](../../getting-started/run-locally/):
+## Summary
 
-```sh
+| | |
+| --- | --- |
+| Plugin ID, version | `aws`, `0.1.0` |
+| Role | Source plugin; provider-native telemetry receiver |
+| Enabled by | `--aws-region` |
+| Credentials | Default AWS SDK credential chain (`AWS_PROFILE`, environment, instance role, ...) |
+| Source ID | `aws/<partition>/<caller account>/<region>`, from STS `GetCallerIdentity` at startup |
+| Authority | The 12-digit `OwnerId` of each resource |
+| Identity scheme | `aws.amazon.com/v1, Kind=Resource` |
+| Keys | `<partition>/ec2/<region>/network-interface/<eni-id>`, `.../instance/<instance-id>`, `.../security-group/<sg-id>` |
+| Contribution | `inventory` |
+| Collections | `aws/ec2/<region>/network-interfaces`, `aws/ec2/<region>/instances`, `aws/ec2/<region>/security-groups` |
+| Provider cursor | None. SQS receipt handles are acknowledgements, not state. |
+
+The caller account identifies the *source*; each resource's owner account is its *authority*. This keeps ENIs owned by other accounts in a shared VPC, and shared Security Groups, under their real owners.
+
+Switching credentials to another account creates a new source ID. The old source's contribution is not retired automatically; retire it separately.
+
+## Running
+
+```bash
 AWS_PROFILE=example go run ./cmd/agentshield \
   --kubernetes-disable \
   --aws-region us-east-1 \
   --aws-events-queue-url https://sqs.us-east-1.amazonaws.com/111111111111/agentshield-aws-events
 ```
 
-| Flag | Meaning |
-| --- | --- |
-| `--aws-region` | Turns the plugin on and fixes its region. The region is required. |
-| `--aws-events-queue-url` | Optional. An SQS queue that receives CloudTrail events through EventBridge. |
-| `--aws-firehose-stream-arn` | Optional. Turns on VPC Flow Log ingestion from this Firehose delivery stream. Also needs `AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY`, or `--aws-firehose-access-key`. |
-| `--kubernetes-disable` | Leaves the Kubernetes plugins out. Without it, both run. |
+`--aws-events-queue-url` is optional. Without it, the plugin reconciles every 5 minutes. Drop `--kubernetes-disable` to run AWS and Kubernetes discovery in one process; then Kubernetes Nodes whose `spec.providerID` points at an inventoried instance get a `backed-by` edge to it. Only the `aws:///<zone>/<instance-id>` form in the source's region resolves; a zone in another region, an EKS Fargate ID, or any other form stays unmatched rather than failing the Kubernetes projection.
 
-The plugin uses the default AWS credential chain. At startup it calls STS `GetCallerIdentity` to bind the source to the authenticated account and partition. The source ID is `aws/<partition>/<caller-account>/<region>`. Credentials for another account create a new source ID, and the runtime cannot retire a removed source yet, so retire the old contribution yourself when you replace an account.
-
-## Permissions
-
-EC2 read access is required:
+### Permissions
 
 ```json
 {
@@ -42,23 +56,39 @@ EC2 read access is required:
 }
 ```
 
-With `--aws-events-queue-url`, the role also needs `sqs:ReceiveMessage` and `sqs:DeleteMessage` on that queue. `GetCallerIdentity` needs no explicit permission. The plugin never logs credentials or authorization material.
+With `--aws-events-queue-url`, also:
 
-## What it reads and when
+```json
+{
+  "Effect": "Allow",
+  "Action": ["sqs:ReceiveMessage", "sqs:DeleteMessage"],
+  "Resource": "arn:aws:sqs:us-east-1:111111111111:agentshield-aws-events"
+}
+```
 
-The plugin publishes three collections: `aws/ec2/<region>/network-interfaces`, `aws/ec2/<region>/instances`, and `aws/ec2/<region>/security-groups`.
+`sts:GetCallerIdentity` needs no explicit permission. The plugin never logs credentials.
 
-At startup and every five minutes it paginates all three APIs completely before it publishes anything. Objects are normalized and content-digested so retries keep stable event IDs. Changed objects become upserts, and objects that are gone become deletes. The plugin then replaces its whole `inventory` contribution and marks the collections ready at the same generation.
+## Reconciliation
 
-A failure while paginating, decoding, validating identities, projecting, publishing, or marking readiness aborts the cycle, and the last coherent contribution stays in place. After a successful snapshot, the first failed poll publishes one degraded health transition, and a later success restores healthy status.
+At startup, every 5 minutes, and whenever a matching SQS event arrives, the plugin:
 
-EC2 APIs are eventually consistent, so a poll can briefly miss a recent change. A later poll converges. The plugin adds no arbitrary delay before it deletes something.
+1. Pages through all three Describe APIs completely.
+2. Normalizes each object and computes a content digest, so retries produce the same event IDs.
+3. Publishes upserts for changed objects and deletes for missing ones.
+4. Replaces the whole `inventory` contribution.
+5. Marks all three collections ready at the same generation.
 
-## Faster change detection
+The generation is recovered at startup and only increases.
 
-Polling is the repair path. For prompt updates, send CloudTrail events to the plugin through EventBridge and SQS. You manage the SQS queue, its dead-letter queue, the CloudTrail trail, and the EventBridge rule. Send the original EventBridge event to SQS with no input transformer.
+If the first reconciliation fails (API, decoding, or validation error), the plugin never becomes ready. After a successful one, the first failed poll republishes the last good input with degraded health. Later failures do not create more generations. The next successful poll restores healthy status.
 
-The rule pattern for the current inventory is:
+EC2 APIs are eventually consistent, so a poll may briefly miss a very recent change. The next poll converges. There is no artificial delay before deletions.
+
+## Change events (optional)
+
+CloudTrail records EC2 API calls; an EventBridge rule forwards them to an SQS queue; the plugin long-polls the queue (10 messages, 20-second wait, 5-minute visibility timeout) and reconciles when an event matches. The queue, its dead-letter queue, the trail, and the rule are yours to create. Create the queue before starting AgentShield so changes during the first reconciliation are kept.
+
+Send the original event to SQS without an input transformer. Rule pattern:
 
 ```json
 {
@@ -67,114 +97,95 @@ The rule pattern for the current inventory is:
   "detail": {
     "eventSource": ["ec2.amazonaws.com"],
     "eventName": [
-      "AssignIpv6Addresses",
-      "AssignPrivateIpAddresses",
-      "AssociateSecurityGroupVpc",
-      "AttachNetworkInterface",
-      "AuthorizeSecurityGroupEgress",
-      "AuthorizeSecurityGroupIngress",
-      "CreateNetworkInterface",
-      "CreateSecurityGroup",
-      "DeleteNetworkInterface",
-      "DeleteSecurityGroup",
-      "DetachNetworkInterface",
-      "DisassociateSecurityGroupVpc",
-      "ModifyNetworkInterfaceAttribute",
-      "ModifyInstanceAttribute",
-      "ModifySecurityGroupRules",
-      "RebootInstances",
-      "ResetNetworkInterfaceAttribute",
-      "RevokeSecurityGroupEgress",
-      "RevokeSecurityGroupIngress",
-      "RunInstances",
-      "StartInstances",
-      "StopInstances",
-      "TerminateInstances",
-      "UnassignIpv6Addresses",
-      "UnassignPrivateIpAddresses",
-      "UpdateSecurityGroupRuleDescriptionsEgress",
-      "UpdateSecurityGroupRuleDescriptionsIngress"
+      "AssignIpv6Addresses", "AssignPrivateIpAddresses", "AssociateSecurityGroupVpc",
+      "AttachNetworkInterface", "AuthorizeSecurityGroupEgress", "AuthorizeSecurityGroupIngress",
+      "CreateNetworkInterface", "CreateSecurityGroup", "DeleteNetworkInterface",
+      "DeleteSecurityGroup", "DetachNetworkInterface", "DisassociateSecurityGroupVpc",
+      "ModifyNetworkInterfaceAttribute", "ModifyInstanceAttribute", "ModifySecurityGroupRules",
+      "RebootInstances", "ResetNetworkInterfaceAttribute", "RevokeSecurityGroupEgress",
+      "RevokeSecurityGroupIngress", "RunInstances", "StartInstances", "StopInstances",
+      "TerminateInstances", "UnassignIpv6Addresses", "UnassignPrivateIpAddresses",
+      "UpdateSecurityGroupRuleDescriptionsEgress", "UpdateSecurityGroupRuleDescriptionsIngress"
     ]
   }
 }
 ```
 
-The queue policy must let `events.amazonaws.com` call `sqs:SendMessage`, restricted by the rule ARN. Give the source queue a redrive policy. A standard queue is enough, because every notification triggers a full read of current state and nothing depends on ordering or exactly-once delivery.
+The queue policy must allow `events.amazonaws.com` to call `sqs:SendMessage`, restricted to the rule ARN. A standard queue is enough; order and exactly-once delivery do not matter because every event triggers a full read. Configure a redrive policy.
 
-The queue must exist before the service starts, so changes during the first listing are kept. The plugin long-polls up to ten messages with a five-minute visibility timeout and deletes a batch only after the graph replacement and readiness publication succeed. A failed reconcile leaves the messages for redelivery. Valid failed API calls, events from another account or region, and unmatched event names are deleted without a reconcile. Malformed messages are not deleted and should move to the dead-letter queue.
+Message handling:
 
-CloudTrail covers API changes made in the caller account. A resource visible through a shared VPC can be changed by another account without an event in this queue, so the periodic reconcile stays authoritative for those changes.
+- A batch is deleted only after a successful reconciliation and readiness update. A failed reconciliation leaves messages for redelivery.
+- Events for other accounts or regions, failed API calls, and unmatched event names are deleted without reconciling.
+- Malformed messages (undecodable JSON or missing CloudTrail fields) are deleted with the rest of the batch and logged by SQS message ID, never by body; `SQSSubscriber.Discarded` counts them. They can never become valid, and the periodic poll covers any change they described. The redrive policy still catches messages that repeatedly fail for other reasons.
 
-## VPC Flow Logs
+`InventoryEventSubscriptions` in `plugins/aws/subscription.go` declares which event names affect which collection. To add an inventory type, extend it together with the adapter and projector.
 
-```text
-VPC Flow Logs -> Amazon Data Firehose -> agentshield -> telemetry sink and rollup
-```
+CloudTrail only covers calls in the caller's account. Resources in a shared VPC can be changed by another account without an event here; the periodic poll catches those.
 
-No OpenTelemetry Collector is involved.
+## Graph output
 
-1. Create a Firehose delivery stream with Direct PUT as its source and a custom HTTPS destination at `https://<host>/v1/aws/firehose/vpc-flow-logs`. Firehose requires HTTPS on port 443. The service can sit behind a load balancer or authenticated gateway that exposes only this route.
-2. Set the stream's access key in `AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY` and start the service with the exact stream ARN, which must be a Firehose stream in the plugin's account and region:
+Resources: `aws/ec2-instance`, `aws/ec2-network-interface`, `aws/ec2-security-group`. VPC, subnet, and attachment IDs are attributes.
 
-   ```sh
-   export AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY='<delivery-stream-access-key>'
-   AWS_PROFILE=example go run ./cmd/agentshield \
-     --kubernetes-disable \
-     --aws-region us-east-1 \
-     --aws-firehose-stream-arn arn:aws:firehose:us-east-1:111111111111:deliverystream/agentshield-vpc-flow-logs
-   ```
+Each current private, public, and IPv6 ENI address becomes a `network/destination` resource with an `exposes` edge from the ENI, so flow logs can resolve to the ENI.
 
-3. Publish the VPC Flow Log directly to that stream with one-minute aggregation, traffic type `ALL`, and exactly this field order:
+An observed Security Group attachment emits `network interface --governed-by--> security group` with declared, bidirectional, partial network-access governance and `effect=unknown`. AWS applies the union of all Security Groups on an ENI, so one attachment does not prove restriction. An attachment is projected only when the group is in the same snapshot and its owner is known; otherwise it is recorded as an ENI diagnostic.
 
-   ```text
-   ${version} ${account-id} ${interface-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${packets} ${bytes} ${start} ${end} ${action} ${log-status} ${vpc-id} ${subnet-id} ${instance-id} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr} ${region} ${az-id} ${flow-direction} ${traffic-path}
-   ```
+Each Security Group has two `aws-security-group-rules` facets, keyed `ingress` and `egress`. A non-empty direction carries declared `allow`; an empty one carries declared `restrict`. Coverage is `partial` because CIDRs, port ranges, prefix lists, group references, ICMP type/code, and stateful return traffic are not in the neutral summary. Native attributes keep sorted CIDRs, prefix lists, group references, protocols, and port bounds, capped at 100 rules per direction and 100 values per peer type with omitted counts. The configuration digest covers the complete direction. Only single-port TCP and UDP rules produce typed ports; protocol `-1` becomes `ALL`.
 
-Every request must carry Firehose protocol version `1.0`, the configured stream ARN, the matching access key, and the same request ID in its header and body. The receiver accepts ordinary or gzip-compressed envelopes up to 96 MiB, decodes their base64 records, and sends normalized events through the shared telemetry pipeline. A response other than 200 asks Firehose to retry the batch.
+The plugin never claims external exposure from a public address or a `0.0.0.0/0` rule, because route tables, gateways, and network ACLs are not observed.
 
-The schema requires version 5, status `OK`, an ENI, a VPC, the configured region, IPv4 or IPv6 traffic, and an ingress or egress direction. `NODATA` and `SKIPDATA` records hold no flow and are acknowledged without an event. Any other malformed or unsupported record rejects the whole Firehose request, so it can be retried or written to the stream's S3 error backup.
-
-| Event field | Value |
-| --- | --- |
-| `kind` | `network-flow` |
-| `observedAt` | The end of the flow window |
-| `operation` | `ingress` or `egress` |
-| `outcome` | `allowed` for `ACCEPT`, `denied` for `REJECT` |
-| `coverage` | `aws-vpc-flow-log` |
-| `count` | The packet count |
-| `properties` | Bounded protocol, source port, destination port, and optional traffic path |
-
-The ENI uses the same account-qualified identity as inventory. The peer is a provider-neutral network destination scoped by partition, account, region, and VPC. Ingress runs from the peer to the ENI, and egress runs from the ENI to the peer. The event ID digests the source ID and the complete canonical record, including fields the rollup does not keep.
-
-Two limits to plan around. The receiver acknowledges once the bounded in-process queue accepts the batch, not after the sink commits it, and the pipeline does not deduplicate retries by event ID. Set Firehose's retry duration and S3 error backup accordingly. Raw events reach your JSONL or ClickHouse sink either way, and a graph rollup that references a peer that is not in the graph stays unresolved.
-
-## What goes in the graph
-
-Resources use the scheme `aws.amazon.com/v1, Kind=Resource`. The authority is the 12-digit `OwnerId` of each resource, not the caller account, which keeps ENIs owned by other accounts and Security Groups shared through a VPC distinct. The keys are:
-
-- `<partition>/ec2/<region>/network-interface/<eni-id>`
-- `<partition>/ec2/<region>/instance/<instance-id>`
-- `<partition>/ec2/<region>/security-group/<sg-id>`
-
-An observed attachment becomes a relationship:
+## VPC Flow Log telemetry
 
 ```text
-network interface --governed-by--> security group
+VPC Flow Logs -> Amazon Data Firehose -> AgentShield -> raw sink and rollups
 ```
 
-It is declared, bidirectional, partial network-access governance with unknown effect. AWS evaluates the union of every Security Group on an ENI, so one attachment does not prove restriction or effective enforcement. The relationship is projected only when the group appears in the same snapshot and its owner is known. Otherwise a bounded diagnostic stays on the ENI.
+No OpenTelemetry Collector is needed.
 
-Every Security Group carries `aws-security-group-rules` facets keyed `ingress` and `egress`. A direction with rules is declared `allow`. An empty direction is declared `restrict`. Coverage stays partial, because the shared envelope cannot represent peer CIDRs, port ranges, prefix lists, Security Group unions, ICMP type and code, or stateful return traffic. The native attributes keep sorted CIDRs, prefix-list IDs, Security Group references, protocols, and port bounds. At most 100 rules per direction and 100 values per peer category are shown, with the omitted counts, while the configuration digest covers the whole direction. Only exact single-port TCP and UDP rules produce typed ports.
+1. Create a Firehose delivery stream with Direct PUT as the source and an HTTP endpoint destination: `https://<agentshield-host>/v1/aws/firehose/vpc-flow-logs`. Firehose requires HTTPS on port 443, so put AgentShield behind a load balancer or gateway that exposes only this route.
+2. Set the stream's access key in `AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY`.
+3. Start AgentShield with `--aws-region` and `--aws-firehose-stream-arn arn:aws:firehose:<region>:<account>:deliverystream/<name>`. The stream must be in the plugin's account and region.
+4. Create the flow log with one-minute aggregation, traffic type `ALL`, and exactly this format:
 
-ENI private, public, and IPv6 addresses become network destinations with authoritative `exposes` bindings, so flow-log peers resolve to them. When the Kubernetes plugin runs in the same process, a Node's `spec.providerID` is resolved with the plugin's account and region, and the Node is `backed-by` the instance once that instance is inventoried.
+```text
+${version} ${account-id} ${interface-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${packets} ${bytes} ${start} ${end} ${action} ${log-status} ${vpc-id} ${subnet-id} ${instance-id} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr} ${region} ${az-id} ${flow-direction} ${traffic-path}
+```
 
-The plugin never claims external exposure from a public address or a `0.0.0.0/0` or `::/0` rule. Defensible reachability also needs route tables, gateways, network ACLs, and resource state, which this source does not read.
+```bash
+export AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY='<delivery-stream-access-key>'
+AWS_PROFILE=example go run ./cmd/agentshield \
+  --kubernetes-disable \
+  --aws-region us-east-1 \
+  --aws-firehose-stream-arn arn:aws:firehose:us-east-1:111111111111:deliverystream/agentshield-vpc-flow-logs
+```
 
-## Limits
+Each request must use Firehose protocol version `1.0`, carry the configured stream ARN and access key, and repeat the request ID in header and body. Plain and gzip-compressed envelopes are accepted, up to 96 MiB. Any non-200 response makes Firehose retry the batch. At most 4 deliveries are handled at once; more, or a batch the telemetry queue cannot take whole, get `429`. A batch larger than the whole queue gets `413`, and a pipeline that is shutting down gives `503`.
 
-- Reconcile cost is linear in the regional ENI count, Security Group count, attachments, and rules, and both API result sets are buffered to keep a coherent publication boundary.
-- VPC, subnet, and ENI attachment IDs are attributes, not resources.
-- There are no remediation actions.
-- Run `make test-aws-e2e` to exercise the plugin end to end against LocalStack in a disposable kind cluster. It uses synthetic CloudTrail-shaped events and injected Firehose envelopes, so it does not validate AWS-managed delivery.
+Records must be version 5 with status `OK`, an ENI, a VPC, the configured region, IPv4 or IPv6 addresses, and an ingress or egress direction. `NODATA` and `SKIPDATA` records are acknowledged and skipped. Any other invalid record rejects the whole request, so Firehose retries it or writes it to its S3 error backup.
 
-For the full contract, see `docs/plugins/aws.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/plugins).
+Each record becomes a `network-flow` event:
+
+- observation time: the end of the flow window;
+- operation `ingress` or `egress`; outcome `allowed` (`ACCEPT`) or `denied` (`REJECT`);
+- coverage `aws-vpc-flow-log`; count: packets;
+- properties: protocol, source port, destination port, optional traffic path;
+- the ENI as one endpoint and the peer address as a network destination scoped to partition, account, region, and VPC. Ingress is peer to ENI; egress is ENI to peer;
+- event and evidence ID: a digest of the source ID and the complete record.
+
+The receiver acknowledges Firehose once the in-memory queue accepts the batch, before the sink commits, so a crash can lose acknowledged records that Firehose will not resend (see [Telemetry failure behavior](/docs/architecture/telemetry/#failure-behavior)). The pipeline does not deduplicate by event ID. Size Firehose retry duration and S3 error backup with that in mind.
+
+## Testing
+
+`make test-aws-e2e` creates a disposable kind cluster with LocalStack, PostgreSQL, and AgentShield. It checks startup inventory, a Security Group update triggered through EventBridge and SQS, ENI removal, and a Firehose-format flow log reaching the JSONL sink. It sends synthetic CloudTrail-shaped events and Firehose envelopes; it does not test real CloudTrail, VPC Flow Logs, or Firehose delivery. Requirements are in [Testing](/docs/development/testing/#aws-end-to-end).
+
+## Scale
+
+Each reconciliation is linear in ENIs, instances, Security Groups, attachments, and rules, and buffers the full API results to publish one coherent snapshot.
+
+## AWS references
+
+- [DescribeNetworkInterfaces](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeNetworkInterfaces.html), [DescribeSecurityGroups](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html), [GetCallerIdentity](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html)
+- [EC2 eventual consistency](https://docs.aws.amazon.com/ec2/latest/devguide/eventual-consistency.html)
+- [CloudTrail events in EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event-cloudtrail.html), [SQS as an EventBridge target](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-targets.html#targets-specifics-sqs), [SQS visibility timeout](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
+- [VPC Flow Logs through Firehose](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-firehose.html), [Firehose HTTP request and response format](https://docs.aws.amazon.com/firehose/latest/dev/httpdeliveryrequestresponse.html), [VPC Flow Log fields](https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html)

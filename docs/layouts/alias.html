@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="{{ site.Language.Locale }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <meta http-equiv="refresh" content="0; url={{ .Page.RelPermalink }}">
+    <link rel="canonical" href="{{ .Permalink }}">
+    <title>{{ .Page.Title }} | {{ site.Title }}</title>
+  </head>
+  <body>
+    <a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a>
+  </body>
+</html>

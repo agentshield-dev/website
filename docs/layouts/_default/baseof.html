@@ -20,5 +20,9 @@
     {{ partial "footer.html" . }}
     {{ $script := resources.Get "js/docs.js" | minify | fingerprint }}
     <script src="{{ $script.RelPermalink }}" integrity="{{ $script.Data.Integrity }}" defer></script>
+    {{ if .Store.Get "hasMermaid" }}
+      {{ $diagrams := resources.Get "js/diagrams.js" | js.Build (dict "targetPath" "js/diagrams.js" "format" "esm" "minify" hugo.IsProduction) | fingerprint }}
+      <script type="module" src="{{ $diagrams.RelPermalink }}" integrity="{{ $diagrams.Data.Integrity }}"></script>
+    {{ end }}
   </body>
 </html>

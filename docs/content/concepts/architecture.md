@@ -49,4 +49,4 @@ Kubernetes and AWS can run side by side. Every plugin instance has a stable sour
 
 Detection does not reconstruct history. If the durable cursor lags the current checkpoint after a start or restart, the service records a `startup_without_historical_snapshot` rebase and advances the cursor, so it analyzes the current state instead of what changed while it was down. A rebase invalidates active investigated findings grounded in an older graph digest. Rule findings are not invalidated automatically. See [Detection](../detection/).
 
-For the full contracts, see the `docs/` directory in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs).
+For the full contracts, see the [architecture reference](/docs/architecture/).
