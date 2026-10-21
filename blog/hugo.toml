@@ -1,6 +1,4 @@
-# baseURL is a placeholder. Update it with the real domain, along with `url` in
-# src/app/site-config.ts and baseURL in docs/hugo.toml.
-baseURL = "https://agentshield.example/blog/"
+baseURL = "https://agent-shield.dev/blog/"
 locale = "en-US"
 title = "agentshield blog"
 enableRobotsTXT = false
@@ -15,8 +13,8 @@ author = "agentshield team"
 github = "https://github.com/agentshield-dev/agentshield"
 docsURL = "/docs/"
 marketingURL = "/"
-siteURL = "https://agentshield.example/"
-defaultImage = "https://agentshield.example/opengraph-image.png"
+siteURL = "https://agent-shield.dev/"
+defaultImage = "https://agent-shield.dev/opengraph-image.png"
 
 [permalinks]
 posts = "/:year/:month/:slug/"

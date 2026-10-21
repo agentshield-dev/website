@@ -8,7 +8,7 @@ export const siteConfig = {
   tagline: "Assume every attacker is an agent.",
   description:
     "Open source defense against lateral movement across Kubernetes and AWS. Agentshield maps how your workloads really talk, investigates change with evidence, and proposes fixes you approve.",
-  url: "https://agentshield.example",
+  url: "https://agent-shield.dev",
   githubUrl: repo,
   locale: "en_US",
   language: "en-US",

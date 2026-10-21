@@ -40,9 +40,7 @@ Next.js proxies `/docs/*` and `/blog/*` to their Hugo servers during local devel
 
 Docs are Markdown in `docs/content/`. Sections are folders with an `_index.md`, and `weight` in the front matter orders the sidebar and the previous and next links. A `callout` shortcode is available for notes. Docs describe what the product does today, so check a claim against the product repository before adding it.
 
-The product documentation was imported from `agentshield/docs/` on `main` at commit `946c6a3` on 2026-10-21, including its screenshots and design proposal. Overlapping concept and plugin guides have been consolidated into canonical references; their old URLs redirect to the owning pages. Setup workflows and the HTTP API catalog each have one owning page. Internal documentation links stay on this site; source-code links point to the product repository.
-
-This repository is the source of truth for product documentation. The corresponding removal from the product repository is on its `docs/move-to-website` branch. Update documentation here when product behavior changes; there is no automatic synchronization. Keep a topic's contract or procedure in one page and link to it from overviews and related guides.
+This repository is the source of truth for product documentation. The product repository links to these pages at `https://agent-shield.dev/docs/`; update documentation here when product behavior changes. The site keeps canonical references for overlapping guides and redirects their previous URLs. Keep a topic's contract or procedure in one page and link to it from overviews and related guides.
 
 Mermaid code fences render as diagrams using the locally installed `mermaid` package, bundled by Hugo only on pages that contain diagrams. Run `npm ci` before building the docs. Screenshots imported from the product live in `docs/static/images/`.
 

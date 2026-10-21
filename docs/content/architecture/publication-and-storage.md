@@ -11,25 +11,24 @@ Code: `pkg/state/versioned.go`, `pkg/state/store.go`, `pkg/state/changes.go`, an
 
 ## The publication transaction
 
-A plugin publishes by calling `Runtime.ReplaceContribution` with a `discovery.ContributionOutput`: the contribution name, generation, complete `graph.Input`, source observation time, readiness, and source health. The store compiles the input with the graph compiler first. If compilation fails, nothing is written.
+A plugin publishes by calling `Runtime.ReplaceContribution` with a `discovery.ContributionOutput`: the contribution name, generation, complete `graph.Input`, source observation time, readiness, and source health. The store compiles the contribution, applies it to its revision-validated in-memory union, and compiles the candidate graph before opening the write transaction. If validation or compilation fails, nothing is written.
 
-It then runs one PostgreSQL transaction. It first takes the graph-wide publication lock (`pg_advisory_xact_lock`), which commit or rollback releases. Each publication is bounded so that one slow publisher cannot hold pooled connections, or the lock, indefinitely. `state.Config` sets the defaults: the whole publication has 5 minutes, which is also its `idle_in_transaction_session_timeout`. The transaction sets `lock_timeout` (2 minutes, which includes the wait for the publication lock) and `statement_timeout` (2 minutes). A publication that times out rolls back and returns an error. The numbered steps below match the `Step N` comments in `publishContribution`:
+The short PostgreSQL transaction then:
 
-1. Resolve the stable contribution ID for `(plugin ID, source ID, name)`, creating the row if needed.
-2. Compare the generation and input digest against the current head (see [generations](#generations)).
-3. Persist assertion content. Rows are keyed by SHA-256, so identical assertions from different contributions or generations share one row.
-4. Record an immutable contribution version and point the head at it.
-5. Replace the contribution's active membership wholesale and record what was added and retracted as deltas. On a contribution's first publication, and whenever the generation is a multiple of 20, also write a full membership checkpoint.
-6. Recompile the union of every active contribution and replace the current projection tables. A relationship that stays unresolved keeps its `first_seen_at` across the rewrite. In the same step, enqueue a Deployment rule-authoring job for every Deployment Pod template revision that has none (see [Detection rules](/docs/architecture/detection-rules/#trigger-and-queue)).
-7. Append one change-feed event, unless the [telemetry exclusion](#what-the-change-feed-excludes) applies.
+1. Resolves the stable contribution ID for `(plugin ID, source ID, name)` and checks the generation and input digest against the current head.
+2. Advances the singleton graph revision with compare-and-swap. If another publisher committed first, the transaction rolls back, reloads that revision, and rebuilds its candidate.
+3. Persists assertion content in batches. Rows are keyed by SHA-256, so identical assertions from different contributions or generations share one row.
+4. Records an immutable contribution version, advances its head, and applies membership additions and retractions with set-based SQL.
+5. Upserts or deletes only projection rows changed by the candidate graph. Unrelated `current_*` rows and unresolved-edge timestamps are left untouched.
+6. Enqueues rule-authoring jobs only for changed Deployment resources and appends one change-feed event unless the [telemetry exclusion](#what-the-change-feed-excludes) applies.
 
-Then it commits. `ReplaceContribution` then reads the current graph with `Latest` to return it. A failure of that read is logged, not returned, because the publication has already committed.
+Then it commits, updates the in-process materializer, and returns the candidate graph view. An idempotent retry writes nothing and returns the current committed view. Publications have bounded transaction, lock, and statement waits; a timeout rolls back the whole transaction.
 
 Any failure rolls back the whole transaction. Readers see either the previous state or the complete new one; there are no partial publications. If a plugin's projection or publication fails, its last successful contribution stays active.
 
-### Why one lock
+### Concurrent publishers
 
-Step 6 rebuilds the projection from every contribution. Two concurrent publishers would each compile a union that misses the other's change, and the later commit would win with a stale view. The global lock prevents that and also makes change-feed sequence numbers follow commit order. The cost is that all publications are serialized. The planned fix is incremental projection updates under per-contribution locks; the schema and delta format already allow it.
+Contribution ownership prevents two plugins from replacing each other's membership, but it does not by itself protect a graph compiled from several contributions. The graph revision compare-and-swap provides that protection without holding a graph-wide advisory lock during compilation. Only one candidate can advance a revision; a stale publisher reloads the winning graph and retries. PostgreSQL row locks still serialize the brief revision advance and change-sequence allocation.
 
 ## Generations
 
@@ -63,18 +62,15 @@ The head status is derived from the version:
 
 ## The current graph
 
-There are two ways to read the current graph. Both use the same compiler.
+Publication keeps one compiled graph per database revision in memory. Whole-graph consumers such as `GET /api/v1/graph`, SSE, and graph traversal read that revision-validated materialization. `Store.Latest` is the compatibility entry point for those deliberate whole-graph reads; it does not recompile an unchanged revision.
 
-- **On read.** `Store.Latest` loads every active assertion in one repeatable-read snapshot and checks each one against its owning contribution. It ends the transaction, compiles the assertions, and returns the graph with its SHA-256 digest. Ending the transaction first means the CPU-bound compile does not hold a pooled connection. `GET /api/v1/graph` uses this.
-- **During publication.** Step 6 compiles the same union and replaces the `current_*` tables. List, detail, and filter endpoints read these tables.
-
-Because both paths run the same pure compiler over the same assertions, they agree.
+List, detail, search, and filter endpoints query the indexed `current_*` tables directly with keyset pagination. Projection rows retain their compiled assertion provenance, so these reads do not sacrifice detail for speed.
 
 ## The change feed
 
 `graph_change_outbox` is a transactional outbox. Each row holds one `ContributionChangeEvent` for one published contribution version:
 
-- a global sequence number, assigned from a single-row counter under the publication lock, so sequences have no gaps and follow commit order;
+- a global sequence number, assigned from a single-row counter, so sequences have no gaps and follow commit order;
 - the contribution's plugin, source, name, generation, status, readiness, and source health;
 - the non-telemetry assertions added and retracted. Each one carries an entity locator (the graph entity type and ID, and for relationships the subject, predicate, and object), so a consumer can act on a retraction without reading the retracted row.
 
@@ -105,18 +101,17 @@ How the detection service uses these is described in [Change feed and reasoning]
 
 `CreateManifest` (and `GET /api/v1/manifest`) records an immutable list of the active version of every non-retired contribution, plus status counts, read in one repeatable-read transaction. The manifest ID is derived from its content, so the same set of versions reuses the same manifest. A manifest ID plus an evaluation time is an *analysis-view token*: it identifies exactly which graph a reasoning result used.
 
-The store keeps everything needed to rebuild the graph for an old manifest: immutable assertion content, immutable versions, per-version add/retract deltas, and periodic full checkpoints. The service that rebuilds a historical graph, and an API that serves one, are not implemented yet. Any future retention or garbage collection must keep every checkpoint and delta chain that a retained manifest still references.
+The store does not rebuild the graph for an old manifest. A manifest records which contribution versions were active for audit correlation, but historical contribution membership is not retained. Historical reconstruction needs a separately designed retention contract before it can be implemented.
 
 ## Tables
 
 | What | Tables |
 | --- | --- |
-| Provider observations | `native_events` |
+| Provider observation receipts | `native_events` |
 | Resource identities | `resource_identities` |
 | Contributions and versions | `contributions`, `contribution_versions`, `contribution_heads` |
 | Assertion content | `resource_assertions`, `facet_assertions`, `relationship_assertions`, `telemetry_assertions` |
 | Active membership | `contribution_current_assertions` |
-| History | `contribution_version_changes`, `contribution_checkpoints` |
 | Current graph | `current_resources`, `current_facets`, `current_relationships`, `unresolved_relationships`, `assertion_conflicts` |
 | Change feed | `graph_change_outbox`, `graph_change_sequence` |
 | Detection and investigation | `reasoning_cursors`, `detection_signals`, `investigation_jobs`, `findings` (with `origin` `agentic_investigation` or `detection_rule`) |
@@ -126,18 +121,18 @@ The store keeps everything needed to rebuild the graph for an old manifest: immu
 
 Assertion tables use typed columns for fields that are queried and JSONB for attributes, properties, and evidence IDs.
 
-PostgreSQL does not store complete provider payloads beyond native events, complete graph snapshots, or raw telemetry. Raw telemetry goes to JSONL or ClickHouse (see [Telemetry](/docs/architecture/telemetry/)).
+PostgreSQL does not store provider payloads, complete graph snapshots, or raw telemetry. Raw telemetry goes to JSONL or ClickHouse (see [Telemetry](/docs/architecture/telemetry/)).
 
-`native_events` stores provider observations for evidence. Kubernetes Secrets are stored with metadata and a sorted list of key names only; values, type, and annotations are never stored.
+`native_events` stores observation identity, provenance metadata, and a content digest for evidence-ID integrity. Provider payloads, including Kubernetes objects, are not stored.
 
 ## Schema migrations
 
-Migrations are SQL files in `pkg/state/migrations/`, embedded into the binary. `state.Open` applies pending migrations at startup in one transaction while holding a PostgreSQL advisory lock, so several processes can start at once. Each applied migration's SHA-256 is recorded in `schema_migrations`; if an embedded file no longer matches, startup fails. Migration does not inherit the caller's startup deadline. It runs under its own `state.Config.MigrationTimeout`, which defaults to 30 minutes, because rebuilding a constraint on a large table can take longer than a short startup budget.
+The greenfield schema is split into three SQL files in `pkg/state/migrations/`: graph publication, detection, and rule authoring. They are embedded into the binary and applied at startup in one transaction while holding a PostgreSQL advisory lock, so several processes can start at once. Each file's SHA-256 is recorded in `schema_migrations`; if an embedded file no longer matches the database, startup fails. Migration does not inherit the caller's startup deadline. It runs under its own `state.Config.MigrationTimeout`, which defaults to 30 minutes.
 
 Rules for contributors:
 
-- Add a new numbered file for every schema change. Never edit a migration that has been applied anywhere.
-- Update constraints when you add a predicate or assertion type. To widen a `CHECK` on a table that grows without bound, such as `relationship_assertions`, drop it and add the new one `NOT VALID`. Existing rows already satisfy the narrower constraint, so the full-table scan is unnecessary, and new rows are still checked.
+- Keep each baseline file as the direct definition of its current schema. Recreate development databases after changing one; upgrades are not supported before the first release.
+- Update the graph baseline constraints when you add a predicate or assertion type.
 - Run `make test-postgres` for any storage change.
 
 The database role needs DDL rights the first time the service starts (and after an upgrade that adds migrations). See [PostgreSQL setup](https://github.com/solo-io/agentshield/blob/main/deploy/kubernetes/README.md#postgresql).

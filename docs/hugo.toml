@@ -1,5 +1,4 @@
-# Update baseURL when the domain is chosen. The same value lives in src/app/site-config.ts and blog/hugo.toml.
-baseURL = "https://agentshield.example/docs/"
+baseURL = "https://agent-shield.dev/docs/"
 locale = "en-US"
 title = "agentshield docs"
 enableRobotsTXT = true
@@ -10,7 +9,7 @@ description = "Run agentshield on Kubernetes or AWS, learn how findings are prod
 github = "https://github.com/agentshield-dev/agentshield"
 marketingURL = "/"
 blogURL = "/blog/"
-siteURL = "https://agentshield.example/"
+siteURL = "https://agent-shield.dev/"
 
 [sitemap]
 changeFreq = "monthly"

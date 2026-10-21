@@ -61,3 +61,5 @@ Discuss large changes or new plugins in an issue first. Run `make test`, `make l
 Changes to Kubernetes or Istio plugin projection need a cluster evaluation before merging, which makes billed model calls. A maintainer can run it. Update the docs that describe any behavior or configuration you change, and leave credentials, runtime data, and generated UI files out of commits.
 
 Source and issues: [github.com/solo-io/agentshield](https://github.com/agentshield-dev/agentshield).
+
+Maintainers: [Repository publication checklist](repository-migration/).
