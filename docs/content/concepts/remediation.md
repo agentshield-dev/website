@@ -1,14 +1,14 @@
 ---
 title: Remediation
 description: How a finding turns into a fix you approve, what each plugin can apply, and what verification proves.
-weight: 5
+weight: 7
 ---
 
-Reasoning attaches desired outcomes to a finding. It never picks a provider and it never applies anything. Plugins declare the actions they can take. You choose one, review the prepared change, and approve it.
+An investigation attaches desired outcomes to a finding. It never picks a provider and it never applies anything. Plugins declare the actions they can take. You choose one, review the prepared change, and approve it.
 
 ## From finding to action
 
-A promoted finding can carry up to eight distinct remediation suggestions. Each names a desired outcome and one affected target, not a plugin implementation, and all of them stay on the finding so you can compare them. The service turns each suggestion into a proposal tied to that finding and target.
+A promoted finding from an investigation can carry up to eight distinct remediation suggestions. Each names a desired outcome and one affected target, not a plugin implementation, and all of them stay on the finding so you can compare them. The service turns each suggestion into a proposal tied to that finding and target. A finding from a rule match carries no suggestions, so it has nothing to remediate.
 
 Plugins advertise the actions they can perform for an outcome and target. The explorer lists every action that is live right now, including alternatives from different plugins or configured clusters, and you choose one before anything is prepared. The API never accepts a proposal from the browser.
 
@@ -31,11 +31,12 @@ A finding that a later change has invalidated stays readable for audit but canno
 
 ## What each plugin can apply
 
-| Outcome | Plugin | Action | Writes |
-| --- | --- | --- | --- |
-| `network.declare-ingress-isolation` | Kubernetes | `network-policy/v1` | A pod label and an ingress-isolating NetworkPolicy |
-| `network.declare-ingress-isolation` | Cilium | `cilium-network-policy/v1` | A pod label and an ingress-isolating CiliumNetworkPolicy |
-| `transport.require-mutual-tls` | Istio | `peer-authentication/v1` | A pod label and a STRICT PeerAuthentication |
+| Outcome | Plugin | Action | Target | Writes |
+| --- | --- | --- | --- | --- |
+| `network.declare-ingress-isolation` | Kubernetes | `network-policy/v1` | Pod | A pod label and an ingress-isolating NetworkPolicy |
+| `network.declare-ingress-isolation` | Kubernetes | `service-network-policy/v1` | Service | An ingress-isolating NetworkPolicy for the Pods the Service selects, with no label |
+| `network.declare-ingress-isolation` | Cilium | `cilium-network-policy/v1` | Pod | A pod label and an ingress-isolating CiliumNetworkPolicy |
+| `transport.require-mutual-tls` | Istio | `peer-authentication/v1` | Pod | A pod label and a STRICT PeerAuthentication |
 
 `gateway.prevent-route-delivery` is a third outcome that reasoning can suggest. No shipped plugin implements it yet, so there is no action to run for it. The AWS plugin has no actions either.
 
@@ -45,7 +46,7 @@ Providers and sources can overlap, so you select the provider, source, and actio
 
 Kubernetes, Istio, and Cilium each scan the policy surface their action could collide with, using the pod labels the change would add, and scan again after the live label write. Cilium covers Kubernetes NetworkPolicy, CiliumNetworkPolicy, and CiliumClusterwideNetworkPolicy. Istio checks PeerAuthentication, because that is the resource that selects a workload's transport mode. An AuthorizationPolicy on the same workload is not a conflict.
 
-Malformed selectors and failed list calls fail closed. A policy that already has the deterministic name is reused only when its target metadata and controlled content match the desired declaration exactly. Anything else is a collision.
+Malformed selectors and failed list calls fail closed. A policy that already has the deterministic name is reused only when its target metadata and controlled content match the desired declaration exactly. Anything else is a collision. The Kubernetes Service action also rejects a Service without a selector, and any selected Pod that another ingress policy already covers.
 
 ## What verification proves
 
@@ -67,6 +68,6 @@ Request bodies are JSON, limited to 64 KiB, and reject unknown fields. An invali
 
 The remediation endpoints answer only when the service has live discovery and a loopback listener. On any other setup, including `--disable-discovery`, findings and graph data stay readable and the three endpoints report that live remediation is unavailable.
 
-Prepared actions and approvals live in process memory. After a restart, prepare again. A production deployment would need authentication, a durable approval audit, CSRF protection, cleanup, and coordination, none of which exist yet. Provider credentials and permissions stay host configuration and never enter a suggestion or a proposal.
+Prepared actions and approvals live in process memory. After a restart, prepare again. The process needs RBAC permission to write NetworkPolicies, CiliumNetworkPolicies, PeerAuthentications, and Pod labels for these actions to succeed. A production deployment would need authentication, a durable approval audit, CSRF protection, cleanup, and coordination, none of which exist yet. Provider credentials and permissions stay host configuration and never enter a suggestion or a proposal.
 
-For the full contract, see `docs/remediation.md` in the [repository](https://github.com/solo-io/agentshield/tree/main/docs).
+For the full contract, see `docs/architecture/remediation.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/architecture).

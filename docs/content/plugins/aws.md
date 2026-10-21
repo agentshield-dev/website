@@ -1,7 +1,7 @@
 ---
 title: AWS
 description: What the AWS plugin reads, the permissions and event infrastructure it needs, how VPC Flow Logs arrive, and what it leaves out.
-weight: 1
+weight: 6
 ---
 
 The AWS plugin is early, version 0.1.0. It is a regional EC2 source. It inventories EC2 instances, Elastic Network Interfaces (ENIs), and Security Groups, and it can take VPC Flow Logs straight from Amazon Data Firehose. It does not inventory VPCs, subnets, route tables, internet or NAT gateways, network ACLs, or IAM, and it has no remediation actions.
@@ -12,7 +12,7 @@ With `AGENTSHIELD_DATABASE_URL` set as in [Run locally](../../getting-started/ru
 
 ```sh
 AWS_PROFILE=example go run ./cmd/agentshield \
-  --disable-kubernetes \
+  --kubernetes-disable \
   --aws-region us-east-1 \
   --aws-events-queue-url https://sqs.us-east-1.amazonaws.com/111111111111/agentshield-aws-events
 ```
@@ -21,8 +21,8 @@ AWS_PROFILE=example go run ./cmd/agentshield \
 | --- | --- |
 | `--aws-region` | Turns the plugin on and fixes its region. The region is required. |
 | `--aws-events-queue-url` | Optional. An SQS queue that receives CloudTrail events through EventBridge. |
-| `--aws-firehose-stream-arn` | Optional. Turns on VPC Flow Log ingestion from this Firehose delivery stream. Also needs `AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY`. |
-| `--disable-kubernetes` | Leaves the Kubernetes plugins out. Without it, both run. |
+| `--aws-firehose-stream-arn` | Optional. Turns on VPC Flow Log ingestion from this Firehose delivery stream. Also needs `AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY`, or `--aws-firehose-access-key`. |
+| `--kubernetes-disable` | Leaves the Kubernetes plugins out. Without it, both run. |
 
 The plugin uses the default AWS credential chain. At startup it calls STS `GetCallerIdentity` to bind the source to the authenticated account and partition. The source ID is `aws/<partition>/<caller-account>/<region>`. Credentials for another account create a new source ID, and the runtime cannot retire a removed source yet, so retire the old contribution yourself when you replace an account.
 
@@ -119,7 +119,7 @@ No OpenTelemetry Collector is involved.
    ```sh
    export AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY='<delivery-stream-access-key>'
    AWS_PROFILE=example go run ./cmd/agentshield \
-     --disable-kubernetes \
+     --kubernetes-disable \
      --aws-region us-east-1 \
      --aws-firehose-stream-arn arn:aws:firehose:us-east-1:111111111111:deliverystream/agentshield-vpc-flow-logs
    ```
@@ -130,7 +130,7 @@ No OpenTelemetry Collector is involved.
    ${version} ${account-id} ${interface-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${packets} ${bytes} ${start} ${end} ${action} ${log-status} ${vpc-id} ${subnet-id} ${instance-id} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr} ${region} ${az-id} ${flow-direction} ${traffic-path}
    ```
 
-Every request must carry Firehose protocol version `1.0`, the configured stream ARN, the matching access key, and the same request ID in its header and body. The receiver accepts ordinary or gzip-compressed envelopes, decodes their base64 records, and sends normalized events through the shared telemetry pipeline. A response other than 200 asks Firehose to retry the batch.
+Every request must carry Firehose protocol version `1.0`, the configured stream ARN, the matching access key, and the same request ID in its header and body. The receiver accepts ordinary or gzip-compressed envelopes up to 96 MiB, decodes their base64 records, and sends normalized events through the shared telemetry pipeline. A response other than 200 asks Firehose to retry the batch.
 
 The schema requires version 5, status `OK`, an ENI, a VPC, the configured region, IPv4 or IPv6 traffic, and an ingress or egress direction. `NODATA` and `SKIPDATA` records hold no flow and are acknowledged without an event. Any other malformed or unsupported record rejects the whole Firehose request, so it can be retried or written to the stream's S3 error backup.
 
@@ -177,4 +177,4 @@ The plugin never claims external exposure from a public address or a `0.0.0.0/0`
 - There are no remediation actions.
 - Run `make test-aws-e2e` to exercise the plugin end to end against LocalStack in a disposable kind cluster. It uses synthetic CloudTrail-shaped events and injected Firehose envelopes, so it does not validate AWS-managed delivery.
 
-For the full contract, see `docs/aws-plugin.md` in the [repository](https://github.com/solo-io/agentshield/tree/main/docs).
+For the full contract, see `docs/plugins/aws.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/plugins).

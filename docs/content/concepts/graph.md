@@ -12,7 +12,7 @@ Every plugin describes its world as resources, facets, and relationships.
 - A **relationship** is a typed edge between resources.
 - A **facet** is a typed statement attached to a resource or a relationship.
 
-The detector and the investigator read neutral security semantics, not provider-native fields, so adding a plugin does not mean teaching the model a new format.
+The detectors and the investigator read neutral security semantics, not provider-native fields, so adding a plugin does not mean teaching the model a new format.
 
 ## Identity
 
@@ -26,15 +26,17 @@ Identity does not drift. Names, labels, and IP addresses are attributes. Identit
 
 Network destinations use a provider-neutral scheme, `agentshield.io/v1, Kind=NetworkDestination`. The authority is the network realm. It defaults to the cluster ID for Kubernetes, and AWS flow-log peers are scoped by partition, account, region, and VPC. The key is `dns/<host>` or `ip/<address>`. Istio, Cilium, AWS, and telemetry all reuse it.
 
+Two more provider-neutral schemes keep telemetry bounded. A network peer class, `agentshield.io/v1, Kind=NetworkPeerClass`, stands in for addresses that match no known resource, such as `external-destination` or `private-ip`, so unknown traffic does not create a node per IP address. A process class, `agentshield.io/v1, Kind=ProcessClass`, names a category of process, currently `shell`, and is the object of the `executes` relationship that the Falco plugin produces.
+
 The compiler derives a deterministic UUID from each identity, so references to the same resource converge on one node even when they come from different collections or contributions.
 
 ## Relationships
 
 The predicate vocabulary is closed. A new predicate is added centrally, not per plugin.
 
-`contains`, `instantiates`, `member-of`, `uses-identity`, `exposes`, `governed-by`, `communicates-with`, `runs-on`, `backed-by`
+`contains`, `instantiates`, `member-of`, `uses-identity`, `exposes`, `governed-by`, `communicates-with`, `runs-on`, `backed-by`, `executes`
 
-For example, an HTTPRoute is `member-of` a Gateway and `exposes` a Service, a Gateway is `governed-by` its GatewayClass, a Pod `runs-on` a Node, an EC2 network interface is `governed-by` a security group, and observed traffic becomes a `communicates-with` edge.
+For example, an HTTPRoute is `member-of` a Gateway and `exposes` a Service, a Gateway is `governed-by` its GatewayClass, a Pod `runs-on` a Node, an EC2 network interface is `governed-by` a security group, observed traffic becomes a `communicates-with` edge, and a shell that Falco saw in a Pod becomes an `executes` edge to the `shell` process class.
 
 A Node is `backed-by` the instance that hosts it. When the other end has not been materialized, a relationship stays `unresolved` until it appears, so that link waits until the AWS plugin has inventoried the instance.
 
@@ -65,7 +67,7 @@ A security-relevant fact carries a typed `v1` envelope on its facet or relations
 | --- | --- |
 | `class` | `exposure`, `governance` |
 | `domain` | `network-access`, `authorization`, `transport-authentication` |
-| `state` | `declared`, `observed`, `effective`, `unknown` |
+| `state` | `declared`, `observed`, `unknown` |
 | `effect` | `unknown`, or a value that fits the class and domain: `internal` or `external-addressable` for network exposure, `restrict`, `allow`, or `deny` for network-access governance, `allow`, `deny`, `audit`, or `custom` for authorization, `require`, `permit`, `disable`, or `inherit` for transport authentication |
 | `scope` | `workload`, `namespace`, `mesh`, `service`, `gateway`, `cluster`, `external`, `unknown` |
 | `direction` | `ingress`, `egress`, `bidirectional`, `not-applicable`, `unknown` |
@@ -73,6 +75,8 @@ A security-relevant fact carries a typed `v1` envelope on its facet or relations
 
 The envelope can also list up to 16 `protocols`, up to 64 unique protocol and port pairs, and a `configurationDigest` of at most 128 characters.
 
-A declared policy is not assumed to be enforced. `state` says whether a fact is declared, observed, or effective, and `coverage` says how much of the native fact the envelope could hold. Coverage is not confidence. Public exposure is never inferred from an Ingress, a Gateway, a ServiceEntry, a public address, or an open security-group rule alone.
+A declared policy is not assumed to be enforced. `state` says whether a fact is declared, observed, or unknown, and `coverage` says how much of the native fact the envelope could hold. Coverage is not confidence, and it never upgrades `state`. Public exposure is never inferred from an Ingress, a Gateway, a ServiceEntry, a public address, or an open security-group rule alone.
 
-For the full model, see `docs/data-model.md` and `docs/security-semantics.md` in the [repository](https://github.com/solo-io/agentshield/tree/main/docs).
+Runtime evidence, such as `process-exec` telemetry and the `executes` relationship, is provider-native and carries no envelope. An observation does not establish an exposure or governance fact. Detection rules and reasoning interpret it.
+
+For the full model, see `docs/concepts/data-model.md` and `docs/concepts/security-semantics.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/concepts).

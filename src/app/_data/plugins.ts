@@ -13,16 +13,16 @@ export const plugins: readonly Plugin[] = [
     name: "Kubernetes",
     status: "available",
     summary:
-      "Workloads, services, and policy. One shared watch per resource type, reused by every plugin built on it.",
+      "Workloads, services, RBAC, and admission config. One shared watch per resource type, reused by every plugin built on it.",
     capabilities: ["Discovery", "Remediation"],
-    fix: "NetworkPolicy ingress isolation",
+    fix: "NetworkPolicy ingress isolation for a Pod or a Service",
   },
   {
     id: "istio",
     name: "Istio",
     status: "available",
     summary:
-      "Mesh policy and exposure. Turns waypoint OTLP access logs into bounded communication rollups.",
+      "Mesh policy, ambient enrollment, and exposure. Turns waypoint OTLP access logs into bounded communication rollups.",
     capabilities: ["Discovery", "Telemetry", "Remediation"],
     fix: "STRICT mutual TLS with PeerAuthentication",
   },
@@ -31,8 +31,8 @@ export const plugins: readonly Plugin[] = [
     name: "Cilium",
     status: "available",
     summary:
-      "CNI policy and endpoints. Normalizes Hubble network flows into the same telemetry shape.",
-    capabilities: ["Discovery", "Telemetry", "Remediation"],
+      "CNI policy and endpoints. A Hubble flow normalizer exists, but no transport feeds it yet.",
+    capabilities: ["Discovery", "Remediation"],
     fix: "CiliumNetworkPolicy ingress isolation",
   },
   {
@@ -40,8 +40,16 @@ export const plugins: readonly Plugin[] = [
     name: "agentgateway",
     status: "early",
     summary:
-      "Gateway API semantics for GatewayClass, Gateway, and HTTPRoute, plus access logs.",
-    capabilities: ["Discovery", "Telemetry"],
+      "Gateway API semantics for GatewayClass, Gateway, and HTTPRoute. Its access-log normalizer has no transport yet.",
+    capabilities: ["Discovery"],
+  },
+  {
+    id: "falco",
+    name: "Falco",
+    status: "early",
+    summary:
+      "Interactive-shell alerts from Falco, forwarded by your collector. A Pod that opens a shell gains an executes edge in the graph.",
+    capabilities: ["Telemetry"],
   },
   {
     id: "aws",
@@ -53,7 +61,4 @@ export const plugins: readonly Plugin[] = [
   },
 ];
 
-export const planned = [
-  { name: "Tetragon", note: "Runtime events from eBPF" },
-  { name: "Falco", note: "Runtime detections" },
-] as const;
+export const planned = [{ name: "Tetragon", note: "Runtime events from eBPF" }] as const;

@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     "agent attackers",
     "Istio",
     "Cilium",
+    "Falco",
     "OpenTelemetry",
     "VPC Flow Logs",
     "MCP",

@@ -18,28 +18,37 @@ export const metadata = pageMetadata({
 const detail: Record<string, { reads: string; telemetry?: string; scope?: string }> = {
   kubernetes: {
     reads:
-      "Owns API discovery and a single shared informer factory. Publishes one collection per resource type, such as pods or services, and reuses it for every plugin that asks.",
+      "Owns API discovery and one shared informer per resource type, covering workloads, services, RBAC, and admission configuration. Publishes one collection per type and reuses it for every plugin that asks.",
     scope:
       "Secrets arrive as metadata and a sorted list of key names. Values, type, and annotations are excluded.",
   },
   istio: {
     reads:
-      "Models PeerAuthentication, AuthorizationPolicy, and ServiceEntry on top of the Kubernetes plugin’s watches.",
-    telemetry: "Maps waypoint OTLP access logs into bounded communication rollups.",
+      "Models AuthorizationPolicy, PeerAuthentication, ambient enrollment, waypoints, ServiceEntry, and VirtualService on top of the Kubernetes plugin’s watches.",
+    telemetry:
+      "Maps waypoint OTLP access logs into bounded communication rollups. It needs a custom access-log provider that emits agentshield attributes, and only Deployment callers resolve.",
     scope:
       "ServiceEntry endpoint values stay out of the graph; only counts and address classes are kept.",
   },
   cilium: {
     reads:
       "Reads CiliumNetworkPolicy, CiliumClusterwideNetworkPolicy, CiliumEndpoint, and CiliumNode, and enriches the matching pods and nodes instead of creating rival identities.",
-    telemetry: "Normalizes Hubble network flows.",
+    telemetry: "A Hubble flow normalizer exists. Nothing feeds it yet.",
     scope: "CNI state and flows only. Service mesh, Envoy, and L7 policy are out of scope.",
   },
   agentgateway: {
     reads:
       "Projects GatewayClass, Gateway, HTTPRoute, and the Services they reference for agentgateway instances managed through Gateway API.",
-    telemetry: "Maps agentgateway access logs.",
+    telemetry: "An access-log normalizer exists. Nothing feeds it yet.",
     scope: "Early. Expect it to change.",
+  },
+  falco: {
+    reads:
+      "Maps Falco alerts that an existing OpenTelemetry Collector forwards to the shared OTLP receiver. It opens no provider connection and owns no inventory.",
+    telemetry:
+      "Turns a terminal-shell alert into a process-exec event. The Pod gains an executes edge to the shell process class, and a rule can match on it.",
+    scope:
+      "Early. One use case: a Pod started an interactive shell. Command lines and user names are never copied.",
   },
   aws: {
     reads:
@@ -145,7 +154,7 @@ export default function PluginsPage() {
           <header className="head">
             <h2 id="planned-title">Planned, not shipped.</h2>
             <p className="lead">
-              Runtime signals are the next plugins. None of these are in this release.
+              More runtime signals are next. Nothing here is in this release.
             </p>
           </header>
           <ul className={styles.planned__list}>

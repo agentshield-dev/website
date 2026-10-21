@@ -1,7 +1,7 @@
 ---
 title: Write a plugin
 description: The runtime contract, the rules a plugin follows, a sample, and how to test one.
-weight: 2
+weight: 7
 ---
 
 A plugin may provide source, semantic projection, and telemetry capabilities. Prefer shared provider connections and collections over duplicate watches. Plugins live in `plugins/` in the repository.
@@ -111,4 +111,4 @@ Run the evals for changes to the Kubernetes or Istio plugins. See [Evals](../../
 
 Organize a plugin package as `plugin.go`, `adapter.go`, `project.go`, `identity.go`, and `assertions.go`. Adapters own I/O and projectors stay pure. Build assertions with shared narrow constructors, keep rule ID constants next to them, and use a new rule ID when the semantics change. Encode deterministic attributes with `encoding/json`, bounded, sorted, and deduplicated. Write comments that explain provider semantics and safety boundaries, not narration.
 
-The longer guides, `docs/plugin-development.md`, `docs/life-of-a-plugin.md`, and `docs/plugin-style-guide.md`, are in the [repository](https://github.com/solo-io/agentshield/tree/main/docs).
+The plugin contract, `docs/plugins/README.md`, the tutorial, `docs/plugins/tutorial.md`, and the style guide, `docs/plugins/style-guide.md`, are in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/plugins).

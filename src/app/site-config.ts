@@ -1,6 +1,6 @@
 // One place for links, copy, and the public URL. When the domain is chosen, update `url` here and
 // `baseURL` in docs/hugo.toml and blog/hugo.toml.
-const repo = "https://github.com/solo-io/agentshield";
+const repo = "https://github.com/agentshield-dev/agentshield";
 
 export const siteConfig = {
   name: "agentshield",
@@ -18,11 +18,13 @@ export const siteConfig = {
     docs: "/docs/",
     blog: "/blog/",
     quickstart: "/docs/getting-started/",
+    demo: "/docs/getting-started/try-the-demo/",
     reasoning: "/docs/concepts/reasoning/",
+    rules: "/docs/concepts/rules/",
     remediation: "/docs/concepts/remediation/",
     pluginGuide: "/docs/plugins/write-a-plugin/",
     evals: "/docs/operations/evals/",
-    lifeOfAPlugin: `${repo}/blob/main/docs/life-of-a-plugin.md`,
+    lifeOfAPlugin: `${repo}/blob/main/docs/plugins/tutorial.md`,
   },
   nav: [
     { label: "How it works", href: "/how-it-works/" },
@@ -40,5 +42,9 @@ export const quickstart = [
   "make run",
 ] as const;
 
-export const reasoningStep =
-  "export AGENTSHIELD_MODEL_ENDPOINT='<your OpenAI-compatible endpoint>'";
+// Setting the endpoint alone enables nothing: the investigation flag turns the model on.
+export const modelSteps = [
+  "export AGENTSHIELD_MODEL_ENDPOINT='https://api.openai.com'",
+  "export OPENAI_API_KEY='<your key>'",
+  "export AGENTSHIELD_AGENTIC_INVESTIGATION=true",
+] as const;

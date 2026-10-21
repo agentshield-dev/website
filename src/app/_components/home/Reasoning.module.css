@@ -27,6 +27,10 @@
 	color: var(--color-accent-on-night);
 }
 
+.lane--investigator .lane__points li::before {
+	background: var(--color-accent-on-night);
+}
+
 .lane h3 {
 	font-size: var(--step-3);
 }
@@ -69,6 +73,51 @@
 	margin-top: var(--space-xs);
 }
 
+.more {
+	margin-top: var(--space-lg);
+}
+
+.author__copy {
+	display: grid;
+	gap: var(--space-md);
+	align-content: start;
+}
+
+.steps {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	counter-reset: step;
+}
+
+.steps li {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+	padding: var(--space-xs) var(--space-md);
+	border-radius: var(--radius-pill);
+	background: var(--color-paper-2);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	counter-increment: step;
+}
+
+.steps li::before {
+	content: counter(step);
+	color: var(--color-ink-3);
+	font-size: 0.8125rem;
+	font-weight: 700;
+}
+
+.steps .steps__you {
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+}
+
+.steps .steps__you::before {
+	color: var(--color-on-accent);
+}
+
 @media (min-width: 60rem) {
 	.lanes {
 		grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
@@ -77,5 +126,12 @@
 
 	.lane {
 		padding: var(--space-2xl) var(--space-xl);
+	}
+
+	.lane--author {
+		grid-column: 1 / -1;
+		grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+		align-items: center;
+		gap: var(--space-xl);
 	}
 }

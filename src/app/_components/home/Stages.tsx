@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { cx } from "../../_lib/cx";
 import styles from "./Stages.module.css";
 
-const plugins = ["kubernetes", "istio", "cilium", "agentgateway", "aws"];
+const plugins = ["kubernetes", "istio", "cilium", "agentgateway", "falco", "aws"];
 
 const assertion = [
   ["subject", "shop/orders"],
@@ -14,9 +14,10 @@ const assertion = [
 ] as const;
 
 const triggers = [
-  ["Every graph change", "The detector checks whether it is new."],
+  ["Every graph change", "Detectors check whether it is new."],
+  ["An active rule matches", "A finding, with no model call."],
+  ["A new path or exposure", "The investigator takes over."],
   ["No signal", "Nothing reaches a model."],
-  ["A signal", "The investigator takes over."],
 ] as const;
 
 const fix = ["Plan", "Dry run", "Approve", "Apply", "Verify"];
@@ -42,8 +43,8 @@ export function Stages() {
               <h3>Read your systems</h3>
               <p>
                 Plugins are Go packages that each know one platform. They watch state, take in
-                telemetry, and publish what they see. Kubernetes, Istio, Cilium, agentgateway, and
-                AWS are in the box.
+                telemetry, and publish what they see. Kubernetes, Istio, Cilium, agentgateway, Falco,
+                and AWS are in the box.
               </p>
             </div>
             <div className={styles.stage__spec}>
@@ -90,11 +91,12 @@ export function Stages() {
               <span className={styles.stage__n} aria-hidden="true">
                 3
               </span>
-              <h3>Investigate what changes</h3>
+              <h3>Detect what changes</h3>
               <p>
-                A detector checks every graph change against the last coherent state. When something
-                new shows up, an investigator model walks the graph and answers with evidence, or
-                with nothing.
+                Detectors check every graph change against the last coherent state. A rule you
+                activated, or one a model drafted and you approved, turns a match into a finding on
+                its own. A new path or exposure goes to an investigator model, which walks the graph
+                and answers with evidence, or with nothing.
               </p>
             </div>
             <div className={styles.stage__spec}>
@@ -116,9 +118,9 @@ export function Stages() {
               </span>
               <h3>Fix what you approve</h3>
               <p>
-                A finding carries the outcomes that would close it. Plugins declare the actions they
-                can take. You choose one, review the prepared change, and approve. Agentshield
-                applies it and re-reads the result.
+                An investigated finding carries the outcomes that would close it. Plugins declare the
+                actions they can take. You choose one, review the prepared change, and approve.
+                Agentshield applies it and re-reads the result.
               </p>
             </div>
             <div className={styles.stage__spec}>

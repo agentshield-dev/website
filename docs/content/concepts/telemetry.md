@@ -8,7 +8,7 @@ The graph says what exists and what is allowed. Telemetry says what is happening
 
 ## Ingest
 
-Send OTLP logs to `POST /v1/logs`. The endpoint accepts protobuf and JSON bodies, optionally gzip-compressed. Add an OTLP/HTTP exporter to an existing collector logs pipeline, so your current exporters stay authoritative for your own telemetry retention:
+Send OTLP logs to `POST /v1/logs`. The endpoint accepts protobuf and JSON bodies, optionally gzip-compressed, up to 16 MiB per request. Add an OTLP/HTTP exporter to an existing collector logs pipeline, so your current exporters stay authoritative for your own telemetry retention:
 
 ```yaml
 exporters:
@@ -27,12 +27,13 @@ A plugin that understands a log format registers a mapper that turns each record
 
 | Plugin | Maps |
 | --- | --- |
-| Istio | Waypoint OTLP access logs |
-| Cilium | Hubble network flows: TCP, UDP, SCTP, ICMP, and ICMPv6 with verdict, direction, and ports |
-| agentgateway | Access logs: client address, backend pod, method, route, response code, and authenticated operation |
-| AWS | VPC Flow Logs delivered by Amazon Data Firehose, not OTLP |
+| Istio | Waypoint OTLP access logs, as `active-probe` events. See [Istio](../../plugins/istio/#telemetry). |
+| Falco | Interactive-shell alerts, as `process-exec` events, delivered as OTLP logs with `service.name=falco`. See [Falco](../../plugins/falco/). |
+| AWS | VPC Flow Logs delivered by Amazon Data Firehose, not OTLP, as `network-flow` events |
+| Cilium | Hubble network flows have a normalizer, but no transport feeds it yet |
+| agentgateway | Access logs have a normalizer, but no transport feeds it yet |
 
-The Hubble Relay and agentgateway access-log transports are not provided yet. Normalization and ingestion exist, and resumable cursors are future work.
+The Hubble Relay and agentgateway access-log transports are not provided yet. Resumable cursors for them are future work.
 
 ### Provider-native receivers
 
@@ -44,7 +45,7 @@ A plugin may own a narrowly scoped receiver for its provider's native format whe
 | --- | --- |
 | `eventId` | Stable identity of the source event |
 | `observedAt` | When the action happened, never when it was published |
-| `kind` | Plugin-defined event class |
+| `kind` | Event class: `network-flow`, `gateway-request`, `active-probe`, or `process-exec` |
 | `subject`, `object` | Complete authority-qualified identities |
 | `operation`, `outcome` | A bounded action and a mapper-defined result |
 | `coverage` | The boundary of what was observed |
@@ -68,9 +69,9 @@ The graph holds bounded rollups and evidence IDs, not payloads.
 - Events are grouped into one-minute series by plugin, source, subject, object, kind, operation, outcome, and coverage.
 - Series are kept for 24 hours, with at most 100,000 series. The oldest are evicted first.
 - Exact network endpoints resolve against current inventory first. A peer that does not resolve collapses into a closed, direction-aware peer class, because the graph never uses an unmatched exact address as an identity.
-- Each rollup becomes a telemetry assertion. A `communicates-with` relationship acts as a lease: it refreshes while traffic continues and retracts when it stops.
+- Each rollup becomes a telemetry assertion. A `communicates-with` relationship acts as a lease: it refreshes while traffic continues and retracts when it stops. A `process-exec` series gets the same kind of lease as an `executes` relationship from the Pod to a bounded process class, so a process execution never implies network reachability.
 
-Telemetry-only updates do not write to the change outbox, so steady traffic stays quiet. The lease is different. Its creation, its refresh near expiry, and its retraction are semantic changes and do reach the outbox, so a new edge can wake reasoning. The investigator reaches the telemetry itself through its tools.
+Telemetry-only updates do not write to the change feed, so steady traffic stays quiet. A lease is different. Its creation, its refresh near expiry, and its retraction are semantic changes and do reach the change feed, so a new edge can wake detection. The investigator reaches the telemetry itself through its tools.
 
 ## Backpressure
 
@@ -80,4 +81,4 @@ The API queue holds up to 100,000 events by default. When it is full, producers 
 
 The path from a collector to the service has no production authentication. Bind the listener to loopback, or place it behind an authenticated gateway. The AWS Firehose route is the exception: it checks the delivery stream ARN and an access key, and still belongs behind HTTPS. See [AWS](../../plugins/aws/).
 
-For the full schema, see `docs/telemetry.md` and `docs/telemetry-attributes.md` in the [repository](https://github.com/solo-io/agentshield/tree/main/docs).
+For the full schema, see `docs/architecture/telemetry.md` in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs/architecture).

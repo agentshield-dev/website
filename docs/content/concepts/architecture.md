@@ -10,28 +10,32 @@ weight: 1
 2. **Semantic plugins** (Istio, Cilium, agentgateway) consume those collections and project them into graph input with pure functions.
 3. **The graph compiler** validates identities and content-addresses every assertion.
 4. **Publication** replaces one plugin's complete contribution in a single transaction. It creates an immutable version and updates active assertion membership and the relational projections.
-5. **The change outbox** (`graph_change_outbox`) records an ordered event for each publication that matters to reasoning.
-6. **The reasoning service** reads the outbox, runs the novelty detector, asks a model to investigate what is new, validates the answer, and promotes or drops it.
-7. **Findings** are stored, served by the API, and shown in the explorer. Each can carry remediation proposals you approve.
+5. **The change feed** (`graph_change_outbox`) records an ordered event for each publication that matters to detection.
+6. **Detection** reads the change feed and runs the built-in checks, CEL rules, and approved Deployment rules. A match of an active rule becomes a finding. Eligible novelty signals go to a durable investigation queue.
+7. **Investigation** drains that queue, samples it, asks a model to investigate through six read-only tools, validates the answer, and promotes or drops it.
+8. **Findings** are stored, served by the API, and shown in the explorer. A finding from an investigation can carry remediation proposals you approve.
 
 ## Deterministic on both sides
 
 | Layer | Deterministic | Contains |
 | --- | --- | --- |
-| Collect | Yes | Plugins, graph, change outbox, novelty detector |
-| Investigate | No, a model | Investigator, which queries the graph through six read-only tools |
+| Collect | Yes | Plugins, graph, change feed, detectors, rules |
+| Investigate | No, a model | Investigation queue, packet, investigator with six read-only tools, Deployment rule author |
 | Decide | Yes | Validation, promotion, findings |
 | Act | You approve | Plan, dry run, approval, apply, verify |
 
-A model can propose. It cannot change graph state, skip validation, or apply a fix.
+A model can propose. It cannot change graph state, skip validation, activate a rule, or apply a fix.
 
 ## Where state lives
 
 | State | Where |
 | --- | --- |
 | Graph: versions, assertions, projections, findings | PostgreSQL |
+| Detection signals, investigation and rule-authoring queues, rulesets, rule drafts | PostgreSQL |
 | Raw telemetry | Local JSONL (default) or ClickHouse |
 | Prepared remediations and approvals | Memory of the running process |
+
+Agentshield runs as one process per database, with no high availability. The collection hub, telemetry rollups, and prepared remediations live in that process's memory.
 
 ## Collections and contributions
 
@@ -43,6 +47,6 @@ Kubernetes and AWS can run side by side. Every plugin instance has a stable sour
 
 ## Restarts
 
-Reasoning does not reconstruct history. If the durable cursor lags the current checkpoint after a start or restart, the service records a `startup_without_historical_snapshot` rebase and advances the cursor, so it analyzes the current state instead of what changed while it was down. Findings grounded in the current graph digest stay valid. Findings grounded in an older digest are invalidated.
+Detection does not reconstruct history. If the durable cursor lags the current checkpoint after a start or restart, the service records a `startup_without_historical_snapshot` rebase and advances the cursor, so it analyzes the current state instead of what changed while it was down. A rebase invalidates active investigated findings grounded in an older graph digest. Rule findings are not invalidated automatically. See [Detection](../detection/).
 
-For the full contracts, see the `docs/` directory in the [repository](https://github.com/solo-io/agentshield/tree/main/docs).
+For the full contracts, see the `docs/` directory in the [repository](https://github.com/agentshield-dev/agentshield/tree/main/docs).

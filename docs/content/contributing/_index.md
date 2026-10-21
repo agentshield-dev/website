@@ -4,7 +4,9 @@ description: Build and test the Go service and the web UI, and find where each p
 weight: 5
 ---
 
-The service is Go. The explorer is a Vite and React app in `ui/`, embedded into the binary.
+The service is Go. The explorer is a Vite and React app in `ui/`, embedded into the binary. Contributions are licensed under Apache License 2.0, and DCO sign-off is not required.
+
+You need Go 1.27 or later, [golangci-lint](https://golangci-lint.run) v2 for `make lint`, Docker for PostgreSQL and the integration tests, Node.js 24 with pnpm for UI work, and kind with kubectl for local clusters and end-to-end tests.
 
 ## Build and test
 
@@ -26,13 +28,15 @@ make ui-dev
 make ui-lint
 make ui-storybook
 make ui-test
+make demo
 ```
 
 - `make ui` builds the UI into `ui/dist`, which the binary embeds.
 - `make ui-dev` starts the Vite dev server on `http://localhost:5173` and proxies `/api` to the service. Run `make graph-ui` in another terminal first.
 - `make ui-lint` runs the TypeScript and Biome checks that CI runs.
 - `make ui-storybook` serves Storybook at `http://127.0.0.1:6006`. It renders the UI against a fake backend, so you need no PostgreSQL, service, or cluster.
-- `make ui-test` runs every story and its interaction test in headless Chromium. The first run downloads Chromium through Playwright.
+- `make ui-test` runs every story and its interaction test in headless Chromium, plus the unit tests. The first run downloads Chromium through Playwright.
+- `make demo` serves the same fake backend as an interactive playground at `http://127.0.0.1:5173`. See [Try the demo](../getting-started/try-the-demo/).
 
 The fake backend lives in `ui/mocks`. Keep it in step with `pkg/api` when responses change.
 
@@ -40,17 +44,20 @@ The fake backend lives in `ui/mocks`. Keep it in step with `pkg/api` when respon
 
 | Directory | Contents |
 | --- | --- |
-| `cmd/` | Entry points: `agentshield` and `agentshield-reasoning-mcp` |
-| `pkg/` | Core packages: api, discovery, graph, reasoning, remediation, state, telemetry |
-| `plugins/` | The discovery plugins: kubernetes, istio, cilium, agentgateway, aws |
+| `cmd/` | Entry points: `agentshield`, `agentshield-detector-rules`, `agentshield-deployment-author`, and `agentshield-reasoning-mcp` |
+| `pkg/` | Core packages: api, detector, deploymentauthoring, discovery, graph, reasoning, remediation, state, telemetry |
+| `plugins/` | The plugins: kubernetes, istio, cilium, agentgateway, falco, aws |
 | `ui/` | The web UI |
-| `docs/` | Architecture, data model, remediation, telemetry, and plugin docs, including one per plugin |
-| `evals/` | Campaigns, scripts, and manifests |
-| `deploy/` | The PostgreSQL compose file and the ClickHouse schema |
+| `docs/` | Concepts, architecture, plugin, and operations docs, including one page per plugin |
+| `evals/` | Campaigns, rule campaigns, scripts, and manifests |
+| `deploy/` | The PostgreSQL compose file, the ClickHouse schema, and the Helm chart |
+| `examples/` | Authoring contexts for the Deployment rule author |
 | `scripts/` | Utility scripts |
 
 ## Before you open a change
 
-Run `make test`, `make lint`, and, for UI changes, `make ui-lint`. Change a plugin's behavior only with its tests, and run `make test-postgres` when you touch the graph or state packages. For Kubernetes or Istio changes, also run `make eval-run`. For AWS changes, also run `make test-aws-e2e`.
+Discuss large changes or new plugins in an issue first. Run `make test`, `make lint`, and, for UI changes, `make ui-lint`. Change a plugin's behavior only with its tests, and run `make test-postgres` when you touch the graph or state packages. Add migrations as new files in `pkg/state/migrations/` and never edit an applied one. For AWS changes, also run `make test-aws-e2e`.
 
-Source and issues: [github.com/solo-io/agentshield](https://github.com/solo-io/agentshield).
+Changes to Kubernetes or Istio plugin projection need a cluster evaluation before merging, which makes billed model calls. A maintainer can run it. Update the docs that describe any behavior or configuration you change, and leave credentials, runtime data, and generated UI files out of commits.
+
+Source and issues: [github.com/solo-io/agentshield](https://github.com/agentshield-dev/agentshield).

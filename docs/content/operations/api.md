@@ -1,7 +1,7 @@
 ---
 title: HTTP API
-description: The JSON endpoints behind the explorer, their filters and pagination, and the graph change stream.
-weight: 4
+description: The JSON endpoints behind the explorer, their filters and pagination, the rule routes, and the graph change stream.
+weight: 5
 ---
 
 The explorer is a client of this API, and your own tooling can be too. It is a development API with no production authentication, so keep the listener on loopback or behind an authenticated gateway. See the [security model](../security/).
@@ -45,6 +45,22 @@ Lists are paginated with `limit`, from 1 to 100 and 25 by default, and an opaque
 | `GET /api/v1/findings/{findingID}` | One finding, including its remediation proposals. |
 
 The three remediation endpoints live under a finding. See [Remediation](../../concepts/remediation/#http-api).
+
+A finding's `origin` is `agentic_investigation` or `detection_rule`. A rule finding has the category `detection_rule_match`, names the rule and its revision, and carries no remediation proposals.
+
+## Rules
+
+The explorer's Rules view uses these routes. See [Detection rules](../../concepts/rules/#review).
+
+| Endpoint | Returns or does |
+| --- | --- |
+| `GET /api/v1/rules` | The active operator ruleset, with `activation` null when none is active, and the loaded Deployment rules, each marked `active` or `shadow`. |
+| `GET /api/v1/rule-drafts` | Up to 500 Deployment rule jobs, newest first, with each job's review status, rule count, requester, and whether it is for the Deployment's current revision. |
+| `GET /api/v1/rule-drafts/{id}` | One job and, once completed, its proposal: rationale, rules, and the `add_rule` and `finish` trace. |
+| `POST /api/v1/rule-drafts/{id}/review` | Approve or reject a completed draft with `{"decision":"approved"}` or `"rejected"`. A job that is not completed answers with a conflict. |
+| `POST /api/v1/workloads/{id}/rule-drafts` | Author a Deployment's current revision now. Answers `202` with the job, a conflict while a worker is authoring it, and not found when the Deployment has no job for its current revision. |
+
+The two `POST` routes change detection and call the model. They answer only on a loopback listener, and on any other listener return `503` unless `--rule-review-api` is set. Decisions are recorded with the actor `api/web-ui`, which is audit metadata, not an identity.
 
 ## Intake
 

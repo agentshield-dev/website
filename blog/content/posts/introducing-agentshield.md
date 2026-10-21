@@ -20,9 +20,9 @@ Agentshield is open source defense against lateral movement across Kubernetes an
 
 ## What it does
 
-- **It reads your systems.** Plugins are Go packages that each know one platform. Kubernetes, Istio, Cilium, agentgateway, and AWS are in the box.
+- **It reads your systems.** Plugins are Go packages that each know one platform. Kubernetes, Istio, Cilium, agentgateway, Falco, and AWS are in the box.
 - **It maps them in one graph.** Workloads, identities, policies, and exposures become nodes in PostgreSQL. Every assertion keeps the plugin, rule, and evidence that produced it.
-- **It investigates what changes.** When the graph changes in a way that matters, an investigator model walks the graph through six read-only tools and answers with evidence, or with nothing. A finding is promoted only if it cites facts the graph actually returned.
+- **It detects what changes.** Built-in detectors flag new paths, new exposure, and lost governance. Rules you write, or that a model drafts and you approve, turn a match into a finding with no model call. A new path or exposure goes to an investigator model that walks the graph through six read-only tools and answers with evidence, or with nothing. A finding is promoted only if it cites facts the graph actually returned.
 - **It proposes fixes you approve.** Plan, dry run, approve, apply, verify. Nothing is written before the approval step.
 
 ## Same request, different verdict
@@ -36,10 +36,11 @@ A compromised `checkout-api` and a `secret-rotation-controller` both send `GET /
 This is v0, and we would rather say so up front.
 
 - It reads Kubernetes and AWS EC2 networking today. The graph and the plugin contract are provider-neutral, so other environments will arrive as plugins. The AWS plugin is early and read-only, and it does not model routing, gateways, network ACLs, or IAM.
-- The development API has no production authentication, and approval state lives in memory.
+- The HTTP API and UI have no authentication, approval state lives in memory, and it runs as one process per database.
 - Verification proves that the declared policy is present. It does not prove that traffic is blocked.
 - Detection works on batches of graph changes, so it is near real time, not instant.
+- It is pre-1.0. Expect breaking changes to APIs, the database schema, and flags.
 
 ## Try it
 
-Start with [Run locally](/docs/getting-started/run-locally/), then [enable reasoning](/docs/getting-started/enable-reasoning/) to get findings. The code is on [GitHub](https://github.com/solo-io/agentshield).
+No cluster? [Try the demo](/docs/getting-started/try-the-demo/), which runs the real UI against fake data in your browser. To run it against your own cluster, start with [Run locally](/docs/getting-started/run-locally/), then [enable reasoning](/docs/getting-started/enable-reasoning/) to get findings. The code is on [GitHub](https://github.com/agentshield-dev/agentshield).

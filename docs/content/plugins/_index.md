@@ -10,30 +10,38 @@ A plugin is a Go package for one system. It reads state, takes in telemetry, pub
 
 | Plugin | Discovery | Telemetry | Can apply |
 | --- | --- | --- | --- |
-| Kubernetes | Yes | No | NetworkPolicy ingress isolation |
-| Istio | Yes | Yes | STRICT mutual TLS with PeerAuthentication |
-| Cilium | Yes | Yes | CiliumNetworkPolicy ingress isolation |
-| agentgateway (early) | Yes | Yes | Nothing |
+| [Kubernetes](kubernetes/) | Yes | No | NetworkPolicy ingress isolation for a Pod or a Service |
+| [Istio](istio/) | Yes | Yes | STRICT mutual TLS with PeerAuthentication |
+| [Cilium](cilium/) | Yes | Not yet | CiliumNetworkPolicy ingress isolation |
+| [agentgateway](agentgateway/) (early) | Yes | Not yet | Nothing |
+| [Falco](falco/) (early) | No | Yes | Nothing |
 | [AWS](aws/) (early) | Yes | Yes | Nothing |
+
+Cilium and agentgateway have normalizers for Hubble flows and access logs, but no transport feeds them yet.
 
 ### Kubernetes
 
-Owns API discovery and a single shared informer factory. It publishes one collection per resource type, such as pods or services, and reuses it for every plugin that asks. Secrets arrive as object metadata and a sorted list of key names. Values, type, and annotations are excluded.
+Owns API discovery and one shared informer per resource type, covering workloads, services, RBAC, and admission configuration. It publishes one collection per type and reuses it for every plugin that asks. Secrets arrive as object metadata and a sorted list of key names. Values, type, and annotations are excluded. See [Kubernetes](kubernetes/).
 
 ### Istio
 
-Models PeerAuthentication, AuthorizationPolicy, and ServiceEntry on top of the Kubernetes plugin's watches. It maps waypoint OTLP access logs into bounded communication rollups. ServiceEntry endpoint values stay out of the graph, and only counts and address classes are kept.
+Models AuthorizationPolicy, PeerAuthentication, ambient enrollment, waypoints, ServiceEntry, and VirtualService on top of the Kubernetes plugin's watches. It maps waypoint OTLP access logs into bounded communication rollups, which needs a custom access-log provider. ServiceEntry endpoint values stay out of the graph, and only counts and address classes are kept. See [Istio](istio/).
 
 ### Cilium
 
-Reads CiliumNetworkPolicy, CiliumClusterwideNetworkPolicy, CiliumEndpoint, and CiliumNode, and enriches the matching pods and nodes instead of creating rival identities. It normalizes Hubble network flows. It covers CNI state and flows only. Service mesh, Envoy, and L7 policy are out of scope, and L7 sections are diagnosed and omitted.
+Reads CiliumNetworkPolicy, CiliumClusterwideNetworkPolicy, CiliumEndpoint, and CiliumNode, and enriches the matching Pods and Nodes instead of creating rival identities. It covers CNI state only. Service mesh, Envoy, and L7 policy are out of scope, and L7 sections are diagnosed and omitted. See [Cilium](cilium/).
 
 ### agentgateway
 
-Early. Expect it to change. It projects GatewayClass, Gateway, HTTPRoute, and the Services they reference for agentgateway instances managed through Gateway API, and maps agentgateway access logs.
+Early. Expect it to change. It projects GatewayClass, Gateway, HTTPRoute, and the Services they reference for agentgateway instances managed through Gateway API.
 
 - Cross-namespace backends are omitted because ReferenceGrant coverage is missing.
-- The Kubernetes source does not watch GatewayClass yet, so the plugin falls back to configured class names.
+
+See [agentgateway](agentgateway/).
+
+### Falco
+
+Early. It maps Falco interactive-shell alerts that your OpenTelemetry Collector forwards, so a Pod that opens a shell gains an `executes` edge to the `shell` process class, and a [detection rule](../concepts/rules/) can match on it. It reads no provider API. See [Falco](falco/).
 
 ### AWS
 
@@ -46,6 +54,5 @@ None of these are in this release.
 | Plugin | Purpose |
 | --- | --- |
 | Tetragon | Runtime events from eBPF |
-| Falco | Runtime detections |
 
 The graph does not model permissions, reachability derived from network policy, or secret access as edges yet.

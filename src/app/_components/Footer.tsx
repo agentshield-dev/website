@@ -34,7 +34,7 @@ export function Footer() {
               </li>
             </ul>
           </nav>
-          <p className={styles.footer__note}>Open source.</p>
+          <p className={styles.footer__note}>Open source, Apache 2.0.</p>
         </div>
       </div>
     </footer>

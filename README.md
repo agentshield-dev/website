@@ -1,10 +1,10 @@
 # agentshield website
 
-This repository contains the public website, documentation, and blog for [agentshield](https://github.com/solo-io/agentshield).
+This repository contains the public website, documentation, and blog for [agentshield](https://github.com/agentshield-dev/agentshield).
 
 ## About agentshield
 
-Agentshield is open source defense against lateral movement across Kubernetes and AWS. It keeps a graph of what exists and what is allowed, takes in telemetry for what actually happens, and investigates what is new. A finding cites the facts and evidence behind it, and a fix is applied only after a person approves it. Plugins for Kubernetes, Istio, Cilium, agentgateway, and AWS ship in the box.
+Agentshield is open source defense against lateral movement across Kubernetes and AWS. It keeps a graph of what exists and what is allowed, takes in telemetry for what actually happens, and detects what is new with built-in checks, detection rules, and a model investigator. A finding cites the facts and evidence behind it, and a fix is applied only after a person approves it. Plugins for Kubernetes, Istio, Cilium, agentgateway, Falco, and AWS ship in the box.
 
 ## Repository layout
 

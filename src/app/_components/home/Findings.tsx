@@ -11,7 +11,7 @@ const points = [
   },
   {
     title: "Uncertainty, stated",
-    text: "Each finding carries a severity and the model’s own uncertainty, so you know what to read first and what to doubt.",
+    text: "Each investigated finding carries a severity and the model’s own uncertainty, so you know what to read first and what to doubt.",
   },
   {
     title: "Fixes from the plugins that can apply them",

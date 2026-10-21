@@ -7,7 +7,7 @@ disableKinds = ["taxonomy", "term"]
 
 [params]
 description = "Run agentshield on Kubernetes or AWS, learn how findings are produced and fixes are approved, and write plugins."
-github = "https://github.com/solo-io/agentshield"
+github = "https://github.com/agentshield-dev/agentshield"
 marketingURL = "/"
 blogURL = "/blog/"
 siteURL = "https://agentshield.example/"

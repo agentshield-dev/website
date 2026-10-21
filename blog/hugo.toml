@@ -12,7 +12,7 @@ pagerSize = 8
 [params]
 description = "Release notes, how-tos, and engineering notes from the agentshield project."
 author = "agentshield team"
-github = "https://github.com/solo-io/agentshield"
+github = "https://github.com/agentshield-dev/agentshield"
 docsURL = "/docs/"
 marketingURL = "/"
 siteURL = "https://agentshield.example/"

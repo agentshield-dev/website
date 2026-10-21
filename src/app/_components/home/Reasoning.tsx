@@ -1,4 +1,6 @@
 import { cx } from "../../_lib/cx";
+import { siteConfig } from "../../site-config";
+import { Arrow } from "../Arrow";
 import styles from "./Reasoning.module.css";
 
 const tools = [
@@ -10,6 +12,8 @@ const tools = [
   "get_behavior_baseline",
 ];
 
+const authoring = ["Baseline window", "Shadow draft", "You approve", "Active rule"];
+
 export function Reasoning() {
   return (
     <section className="band band--tint" id="reasoning" aria-labelledby="reasoning-title">
@@ -17,14 +21,15 @@ export function Reasoning() {
         <header className="head">
           <h2 id="reasoning-title">The model proposes. The graph decides.</h2>
           <p className="lead">
-            A detector flags what is new, and only those changes reach a model. The model
-            investigates, and every claim it makes is checked against what the graph returns.
+            A model can investigate a change or draft a rule, and neither is taken on trust. A
+            finding is checked against what the graph returns. A drafted rule stays in shadow mode
+            until you approve it.
           </p>
         </header>
 
         <div className={styles.lanes}>
           <article className={cx(styles.lane, styles["lane--investigator"], "on-night")}>
-            <p className={styles.lane__when}>Runs on a change with a signal</p>
+            <p className={styles.lane__when}>Runs on a new path or exposure</p>
             <h3>Investigator</h3>
             <p>
               An investigator model gets a compact packet and queries the graph through read-only
@@ -37,6 +42,9 @@ export function Reasoning() {
                   {tool}
                 </li>
               ))}
+            </ul>
+            <ul className={styles.lane__points}>
+              <li>Runs from its own sampled, budgeted queue, so a slow model never delays detection</li>
             </ul>
           </article>
 
@@ -52,7 +60,31 @@ export function Reasoning() {
               <li>Model prose never overrides the check</li>
             </ul>
           </article>
+
+          <article className={cx(styles.lane, styles["lane--author"])}>
+            <div className={styles.author__copy}>
+              <p className={styles.lane__when}>Runs once per Deployment revision</p>
+              <h3>Rule author</h3>
+              <p>
+                After a baseline window, a model reads the requests a Deployment actually made and
+                drafts up to three narrow rules. A draft runs in shadow mode until you approve it.
+                An approved rule matches with no model call.
+              </p>
+            </div>
+            <ol className={styles.steps} aria-label="Rule author steps">
+              {authoring.map((step) => (
+                <li key={step} className={cx(step === "You approve" && styles.steps__you)}>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </article>
         </div>
+
+        <a className={cx("link", styles.more)} href={siteConfig.links.rules}>
+          How detection rules work
+          <Arrow />
+        </a>
       </div>
     </section>
   );
