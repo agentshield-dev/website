@@ -1,0 +1,107 @@
+name: Update Reference Documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: AgentShield tag or commit containing the docs exporter
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-ref-docs
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Generate and propose reference update
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Check out website
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          path: website
+          persist-credentials: false
+
+      - name: Check out AgentShield
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: solo-io/agentshield
+          ref: ${{ inputs.source_ref }}
+          path: agentshield
+          persist-credentials: false
+
+      - name: Record source revision
+        id: source
+        working-directory: agentshield
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: agentshield/go.mod
+          cache-dependency-path: agentshield/go.mod
+
+      - name: Test exporter
+        working-directory: agentshield
+        run: go test -race ./cmd/agentshield-docs
+
+      - name: Generate reference
+        run: make -C ../agentshield docs-reference DOCS_OUT="$PWD/docs/content/reference"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Set up Hugo
+        shell: bash
+        run: |
+          hugo_dir="$(mktemp -d "${RUNNER_TEMP}/hugo.XXXXXX")"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/gohugoio/hugo/releases/download/v0.163.3/hugo_extended_0.163.3_linux-amd64.tar.gz \
+            --output "${hugo_dir}/hugo.tar.gz"
+          printf '%s  %s\n' \
+            '1234302ece1167cef2c252aaa69c89b4f0afc5851f1a30536d693e8e7fc4d1bf' \
+            "${hugo_dir}/hugo.tar.gz" | sha256sum --check
+          tar -xzf "${hugo_dir}/hugo.tar.gz" --directory "${hugo_dir}" hugo
+          echo "${hugo_dir}" >> "${GITHUB_PATH}"
+          "${hugo_dir}/hugo" version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate documentation
+        run: npm run build:docs
+
+      - name: Create or update pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: website
+          base: main
+          branch: docs/update-reference
+          delete-branch: true
+          add-paths: docs/content/reference/cel.md
+          commit-message: "docs: refresh generated CEL reference"
+          title: "docs: refresh generated CEL reference"
+          body: |
+            Regenerated the CEL reference from [AgentShield commit `${{ steps.source.outputs.sha }}`](https://github.com/solo-io/agentshield/commit/${{ steps.source.outputs.sha }}).
+
+            Requested source ref: `${{ inputs.source_ref }}`.
+
+            Validation: exporter race tests and `npm run build:docs` passed.
+            Only the generated CEL reference page is included; authored documentation is unchanged.
