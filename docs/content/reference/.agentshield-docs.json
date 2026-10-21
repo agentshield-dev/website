@@ -1,0 +1,15 @@
+[
+  "_index.md",
+  "go/_index.md",
+  "go/pkg-api.md",
+  "go/pkg-deploymentauthoring.md",
+  "go/pkg-detector.md",
+  "go/pkg-discovery.md",
+  "go/pkg-graph.md",
+  "go/pkg-reasoning-mcpserver.md",
+  "go/pkg-reasoning-modelanalyzer.md",
+  "go/pkg-reasoning.md",
+  "go/pkg-remediation.md",
+  "go/pkg-state.md",
+  "go/pkg-telemetry.md"
+]

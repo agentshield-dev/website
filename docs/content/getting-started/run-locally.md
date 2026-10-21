@@ -66,7 +66,7 @@ Follow [Enable reasoning](../enable-reasoning/) to configure the model endpoint,
 - `--kubernetes-cluster-id` should be a stable name for the cluster. It is part of resource identities, so pick it once. `make run` uses the default, `local`.
 - To target a specific kubeconfig: `go run ./cmd/agentshield --kubernetes-kubeconfig /path/to/kubeconfig --kubernetes-cluster-id my-cluster --kubernetes-source-id kubernetes/my-cluster`.
 - To view what is already stored without running discovery: `make graph-ui`.
-- AWS: see [AWS](/docs/plugins/aws/#running).
+- AWS: see [AWS configuration](/docs/operations/configuration/).
 - Every flag: [Configuration](/docs/operations/configuration/).
 
 ## Clean up
