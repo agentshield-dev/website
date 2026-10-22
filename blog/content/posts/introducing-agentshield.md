@@ -17,7 +17,7 @@ tags:
   - ai agents
 ---
 
-![agentshield](/blog/img/introducing-agentshield/agentshield-wordmark.png)
+![agentshield](/blog/img/agentshield-logo.png)
 
 Scroll through ten years of breach threads on Hacker News and one pattern repeats: the first compromised machine is never the story. The story is how far the attacker got from it.
 

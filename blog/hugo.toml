@@ -15,6 +15,7 @@ docsURL = "/docs/"
 marketingURL = "/"
 siteURL = "https://agent-shield.dev/"
 defaultImage = "https://agent-shield.dev/opengraph-image.png"
+defaultCover = "brand/logo-light.svg"
 
 [permalinks]
 posts = "/:year/:month/:slug/"
