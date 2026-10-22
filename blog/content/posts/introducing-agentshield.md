@@ -1,8 +1,8 @@
 ---
 title: Introducing agentshield
 description: A decade of lateral movement, from flat networks to AI agents, and the open-source project we built to find those paths and close them.
-date: 2026-10-21T09:00:00Z
-lastmod: 2026-10-21T09:00:00Z
+date: 2026-10-22T09:00:00Z
+lastmod: 2026-10-22T09:00:00Z
 draft: false
 author: Sebastian Maniak
 authorTitle: AI Architect
@@ -136,4 +136,4 @@ Hacker News threads are linked inline above; these are the underlying reports.
 - [‘GitLost’ vulnerability let GitHub’s AI workflows leak private repositories](https://siliconangle.com/2026/07/07/gitlost-vulnerability-let-githubs-ai-workflows-leak-private-repositories/), SiliconANGLE, July 2026
 - [Security incident disclosure – July 2026](https://huggingface.co/blog/security-incident-july-2026), Hugging Face, July 2026
 - [OpenAI and Hugging Face partner to address security incident during model evaluation](https://openai.com/index/hugging-face-model-evaluation-security-incident/), OpenAI, July 2026
-- agentshield README, CONTRIBUTING.md and docs/getting-started.md, October 2026
+- agentshield [README](https://github.com/agentshield-dev/agentshield/blob/main/README.md), [CONTRIBUTING.md](https://github.com/agentshield-dev/agentshield/blob/main/CONTRIBUTING.md) and [docs/getting-started.md](https://github.com/agentshield-dev/agentshield/blob/main/docs/getting-started.md), October 2026
