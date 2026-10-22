@@ -72,6 +72,8 @@ code, pre { font-family: var(--font-mono); font-feature-settings: "calt" 0; }
 .post-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .post-card { position: relative; display: flex; min-width: 0; min-height: 14rem; flex-direction: column; align-items: flex-start; padding: 1.5rem; background: var(--paper-2); border-radius: var(--radius-md); transition: background-color 120ms var(--ease-out); }
 .post-card:hover, .post-card:focus-within { background: var(--accent-soft); }
+.post-card-cover { width: calc(100% + 3rem); max-width: none; aspect-ratio: 1200 / 630; margin: -1.5rem -1.5rem 1.25rem; object-fit: cover; background: var(--paper); border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.post-card-cover.is-logo { padding: 2.5rem 18%; object-fit: contain; background: var(--night); }
 .post-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; color: var(--ink-3); font-size: 0.875rem; }
 .post-category, .article-category { position: relative; z-index: 1; display: inline-flex; min-height: 1.75rem; align-items: center; padding: 0 0.75rem; color: var(--accent-strong); background: var(--accent-soft); border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; }
 .post-card:hover .post-category { background: var(--paper); }
@@ -137,9 +139,10 @@ code, pre { font-family: var(--font-mono); font-feature-settings: "calt" 0; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .tag-list a { padding: 0.375rem 0.875rem; color: var(--ink-2); background: var(--paper-3); border-radius: var(--radius-pill); font-size: 0.875rem; font-weight: 600; }
 .tag-list a:hover { color: var(--accent-strong); background: var(--accent-soft); }
-.author-note { padding: 1.5rem; background: var(--paper-2); border-radius: var(--radius-md); }
+.author-note { display: flex; align-items: center; gap: 1rem; padding: 1.5rem; background: var(--paper-2); border-radius: var(--radius-md); }
+.author-note img { flex: none; width: 3.5rem; height: 3.5rem; border-radius: 50%; object-fit: cover; }
 .author-note strong { display: block; font-size: 1.25rem; font-weight: 700; }
-.author-note > p { margin-top: 0.25rem; color: var(--ink-2); }
+.author-note p { margin-top: 0.25rem; color: var(--ink-2); }
 .related-posts { display: grid; gap: 0.5rem; }
 .related-posts h2 { margin-bottom: 0.5rem; font-size: 1.5rem; }
 .related-posts > a { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1rem 1.25rem; background: var(--paper-2); border-radius: var(--radius-md); font-weight: 620; transition: background-color 120ms var(--ease-out); }

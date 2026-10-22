@@ -1,4 +1,7 @@
 <article class="post-card">
+  {{- $cover := .Params.cover | default site.Params.defaultCover }}
+  {{- if not (hasPrefix $cover "/") }}{{ $cover = $cover | relURL }}{{ end }}
+  <img class="post-card-cover{{ if not .Params.cover }} is-logo{{ end }}" src="{{ $cover }}" alt="" loading="lazy">
   <div class="post-card-meta">
     {{ with .Params.categories }}{{ with index . 0 }}<a class="post-category" href="{{ printf "categories/%s/" (. | urlize) | relURL }}">{{ . }}</a>{{ end }}{{ end }}
     <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time>
