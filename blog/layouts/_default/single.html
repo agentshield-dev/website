@@ -23,8 +23,11 @@
         </div>
       {{ end }}
       <div class="author-note">
-        <strong>{{ .Params.author | default site.Params.author }}</strong>
-        <p>Maintainers and contributors building agentshield in the open.</p>
+        {{ with .Params.authorImage }}<img src="{{ . }}" alt="" width="56" height="56">{{ end }}
+        <div>
+          <strong>{{ .Params.author | default site.Params.author }}</strong>
+          <p>{{ .Params.authorTitle | default "Maintainers and contributors building agentshield in the open." }}</p>
+        </div>
       </div>
       {{ $related := site.RegularPages.Related . | first 3 }}
       {{ with $related }}
