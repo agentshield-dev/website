@@ -41,6 +41,8 @@ TL;DR: it watches the components running in your system and checks whether an at
 
 agentshield watches Kubernetes clusters that run Istio ambient mesh, Cilium, agentgateway and, optionally, AWS, and finds evidence that an attacker can traverse the cluster. It merges workloads, identities, RBAC, network and mesh policies, and observed traffic from Istio waypoint logs and VPC Flow Logs into one graph stored in PostgreSQL.
 
+![agentshield merges Kubernetes, Istio ambient, Cilium, agentgateway and AWS signals into one security graph in PostgreSQL, then traces a lateral-movement path from a compromised frontend to a signing key](/blog/img/hands-on-agentshield/security-graph.gif)
+
 Every fact records which plugin and which observation produced it. When the graph changes, built-in detectors and optional CEL rules look for risky shifts like:
 
 - New exposure
@@ -49,6 +51,8 @@ Every fact records which plugin and which observation produced it. When the grap
 - A workload reaching a destination it never reached before
 
 If you turn it on, an LLM investigates those signals through read-only graph tools, and a finding is accepted only when it cites evidence the graph actually returned.
+
+![From a graph change to an evidence-backed finding: detectors flag risky changes without calling a model, and an LLM finding is accepted only if it cites evidence the graph returned](/blog/img/hands-on-agentshield/change-to-finding.gif)
 
 A model can also draft a detection rule for each Deployment, which stays in shadow mode until someone approves it. Findings can propose a fix, like a NetworkPolicy, a CiliumNetworkPolicy or an Istio `STRICT` PeerAuthentication, but nothing changes until a human prepares and approves it.
 
@@ -67,6 +71,8 @@ The first is `AGENTSHIELD_AGENTIC_INVESTIGATION`, the LLM investigation. When a 
 The second is `AGENTSHIELD_DEPLOYMENT_RULE_AUTHORING`, which isn't an investigation. The LLM watches each Deployment's behavior for the baseline window (6 hours by default) and then writes a detection rule for it. That rule runs in shadow mode until someone approves it.
 
 You can turn on either one on its own. For investigation only, drop the `AGENTSHIELD_DEPLOYMENT_RULE_AUTHORING=true` line from the `kubectl set env` command in [Enabling LLM calling](#enabling-llm-calling).
+
+![agentshield's two model features: LLM investigation of detector signals, and deployment rule authoring that drafts a CEL rule kept in shadow mode until an operator approves it](/blog/img/hands-on-agentshield/two-model-features.jpg)
 
 Turning on either feature also turns on detection itself. Detection runs only when at least one of them is enabled. If you skip that section, you get no findings at all, not even from rules that don't need a model. You still get the graph and the UI.
 
@@ -130,11 +136,11 @@ Now that you know the design, the why and the architecture, let's get to the how
 
 4. Go to http://localhost:8088. You'll see the agentshield UI, similar to the screenshot below.
 
-   ![The agentshield UI](/blog/img/hands-on-agentshield/agentshield-ui.png)
+   ![The agentshield Security overview page, showing graph resources, relationships, priority findings and discovery source health](/blog/img/hands-on-agentshield/agentshield-ui.png)
 
    You can begin to see resources and how they connect to each other in the graph.
 
-   ![Resources and their connections in the agentshield graph](/blog/img/hands-on-agentshield/agentshield-graph.png)
+   ![Exploring resources and their relationships in the agentshield Environment graph](/blog/img/hands-on-agentshield/agentshield-graph.gif)
 
 ## Enabling LLM calling
 
@@ -276,11 +282,11 @@ With agentic investigation, and therefore detection, enabled, you can use the fo
 
 3. Read the finding in the agentshield UI under the **Findings** tab.
 
-   ![The finding in the agentshield Findings tab](/blog/img/hands-on-agentshield/agentshield-finding.png)
+   ![A loss_of_governance finding in the Findings tab: the payments pod keeps an external exposure path after its NetworkPolicy was removed](/blog/img/hands-on-agentshield/agentshield-finding.gif)
 
    You can also view the resources it's tied to.
 
-   ![The resources tied to the finding](/blog/img/hands-on-agentshield/agentshield-finding-resources.png)
+   ![The payments Service in the Environment graph, linked to its namespace, pod and external destination](/blog/img/hands-on-agentshield/agentshield-finding-resources.png)
 
 ## Wrapping up
 
