@@ -119,7 +119,7 @@ Ready for a real cluster? `docs/getting-started.md` in the repo takes you from a
 agentshield is early and we are at an exciting time to join the community and build with us:
 
 - **Star and watch the repo:** [github.com/agentshield-dev/agentshield](https://github.com/agentshield-dev/agentshield).
-- **Join us on Discord:** **\[add invite link\]**. Ask questions, share what you find, and tell us what your cluster looks like.
+- **Join us on Discord:** [discord.gg/Anq24jH8Kp](https://discord.gg/Anq24jH8Kp). Ask questions, share what you find, and tell us what your cluster looks like.
 - **Contribute:** agentshield is built for people who want to add providers, detectors and evaluation scenarios.
 
 The next lateral-movement story will hit Hacker News soon enough. Help us make sure it isn’t yours.
