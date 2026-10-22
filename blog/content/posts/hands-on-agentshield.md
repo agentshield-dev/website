@@ -2,8 +2,8 @@
 title: "Getting Hands-On: Installing, Deploying, and Configuring agentshield OSS"
 description: Install agentshield on Kubernetes, turn on LLM investigation, and watch it catch a risky change that opens a lateral-movement path.
 slug: hands-on-agentshield
-date: 2026-10-21T15:00:00Z
-lastmod: 2026-10-21T15:00:00Z
+date: 2026-10-22T11:00:00Z
+lastmod: 2026-10-22T11:00:00Z
 draft: false
 author: Michael Levan
 authorTitle: AI Architect
