@@ -14,6 +14,7 @@ github = "https://github.com/agentshield-dev/agentshield"
 docsURL = "/docs/"
 marketingURL = "/"
 siteURL = "https://agent-shield.dev/"
+gtmContainer = "GTM-5JNHX9P7"
 defaultImage = "https://agent-shield.dev/opengraph-image.png"
 defaultCover = "brand/logo-light.svg"
 

@@ -10,6 +10,7 @@ github = "https://github.com/agentshield-dev/agentshield"
 marketingURL = "/"
 blogURL = "/blog/"
 siteURL = "https://agent-shield.dev/"
+gtmContainer = "GTM-5JNHX9P7"
 
 [sitemap]
 changeFreq = "monthly"
