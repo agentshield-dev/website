@@ -2,6 +2,7 @@
 <html lang="{{ site.Language.Locale }}">
   {{ partial "head.html" . }}
   <body class="{{ if .IsHome }}is-home{{ end }}">
+    {{ partial "gtm-body.html" . }}
     <a class="skip-link" href="#main-content">Skip to content</a>
     {{ partial "header.html" . }}
     <button class="nav-scrim" type="button" data-nav-close aria-label="Close navigation"></button>

@@ -9,6 +9,8 @@ export const siteConfig = {
   description:
     "Open source defense against lateral movement across Kubernetes and AWS. Agentshield maps how your workloads really talk, investigates change with evidence, and proposes fixes you approve.",
   url: "https://agent-shield.dev",
+  // GA4, the Hivemind pixel, and Qualified are tags inside this container.
+  gtmContainerId: "GTM-5JNHX9P7",
   githubUrl: repo,
   locale: "en_US",
   language: "en-US",

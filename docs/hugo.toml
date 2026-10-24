@@ -10,6 +10,7 @@ github = "https://github.com/agentshield-dev/agentshield"
 marketingURL = "/"
 blogURL = "/blog/"
 siteURL = "https://agent-shield.dev/"
+gtmContainer = "GTM-5JNHX9P7"
 
 [sitemap]
 changeFreq = "monthly"
@@ -27,6 +28,11 @@ lineNos = false
 startLevel = 2
 endLevel = 3
 ordered = false
+
+# Hugo's project root is this docs/ directory. Mermaid is installed in the
+# repo-root node_modules, which Hugo 0.167 will not import unless it is listed.
+[security.node.permissions]
+allowRead = [".", "../node_modules"]
 
 [[module.mounts]]
 source = "assets"
