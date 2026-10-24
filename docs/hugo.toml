@@ -29,6 +29,11 @@ startLevel = 2
 endLevel = 3
 ordered = false
 
+# Hugo's project root is this docs/ directory. Mermaid is installed in the
+# repo-root node_modules, which Hugo 0.167 will not import unless it is listed.
+[security.node.permissions]
+allowRead = [".", "../node_modules"]
+
 [[module.mounts]]
 source = "assets"
 target = "assets"
