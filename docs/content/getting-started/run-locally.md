@@ -66,7 +66,7 @@ Follow [Enable reasoning](../enable-reasoning/) to configure the model endpoint,
 - `--kubernetes-cluster-id` should be a stable name for the cluster. It is part of resource identities, so pick it once. `make run` uses the default, `local`.
 - To target a specific kubeconfig: `go run ./cmd/agentshield --kubernetes-kubeconfig /path/to/kubeconfig --kubernetes-cluster-id my-cluster --kubernetes-source-id kubernetes/my-cluster`.
 - To view what is already stored without running discovery: `make graph-ui`.
-- AWS: see [AWS configuration](/docs/operations/configuration/).
+- AWS: see [AWS configuration](/docs/operations/configuration/). AgentShield uses the AWS SDK default credential chain; workloads outside AWS should use [IAM Roles Anywhere](https://docs.aws.amazon.com/sdkref/latest/guide/access-rolesanywhere.html) instead of copied SSO sessions or long-lived access keys.
 - Every flag: [Configuration](/docs/operations/configuration/).
 
 ## Clean up

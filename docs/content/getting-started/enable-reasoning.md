@@ -56,11 +56,11 @@ Agentic investigation drains its own durable queue, so a slow or failing model n
 | Flag | Default | Meaning |
 | --- | --- | --- |
 | `--agentic-investigation-batch-window` | `30s` | How long a queued investigation waits so later windows that share a resource join it. |
-| `--agentic-investigation-sample-rate` | `1` | Fraction of medium-risk investigations that run. High and critical ones always run. |
+| `--agentic-investigation-sample-rate` | `0` | Fraction of investigations that run. Zero disables the whole-graph agentic path, including high and critical work. |
 | `--agentic-investigation-dedup-window` | `1h` | Skip an investigation whose signal pattern was already investigated within this window. |
 | `--agentic-investigation-max-per-hour` | `0`, unlimited | Investigations started in any trailing hour. Over budget, medium-risk jobs are skipped and high-risk jobs wait. |
 
-With the defaults, only batching and deduplication limit spend. Rule authoring is not sampled or budgeted. It makes one call per Pod template revision, including every Deployment already in the graph when you turn it on.
+With the default sample rate of zero, whole-graph agentic investigation makes no calls. Resource rule authoring is not sampled or budgeted and makes one call per bounded resource context revision.
 
 ## Retrieval modes
 

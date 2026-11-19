@@ -11,7 +11,7 @@ Every binary prints its version and commit and exits with `--version` (for `agen
 
 ## `agentshield`
 
-The main service: discovery, telemetry, API, UI, and (optionally) detection with agentic investigation and Deployment rule authoring.
+The main service: discovery, telemetry, API, UI, and (optionally) detection with agentic investigation and resource rule authoring.
 
 ### Server and storage
 
@@ -38,6 +38,7 @@ The main service: discovery, telemetry, API, UI, and (optionally) detection with
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--disable-discovery` | `false` | Run no plugins. Serve what is already in PostgreSQL. Also disables live remediation. |
+| `--classifiers-file` | empty | Typed CEL classifiers applied to Kubernetes labels and annotations and AWS ECS tags. |
 | `--kubernetes-disable` | `false` | Do not start the Kubernetes source. Kubernetes-backed consumer plugins then have no shared collection source. |
 | `--kubernetes-kubeconfig` | empty | Kubeconfig path. Empty means in-cluster config when `KUBERNETES_SERVICE_HOST` is set, otherwise the standard loading rules (`KUBECONFIG`, `~/.kube/config`). |
 | `--kubernetes-cluster-id` | `local` | Stable Kubernetes source authority; never change it for an existing cluster. |
@@ -54,6 +55,8 @@ The main service: discovery, telemetry, API, UI, and (optionally) detection with
 | `--falco-cluster-id` | `local` | Stable cluster authority used by Falco alert telemetry. Match the Kubernetes source so Pod identities converge. |
 | `--falco-source-id` | `kubernetes/local` | Stable source ID for Falco telemetry. |
 | `--aws-region` | empty | Enables the AWS plugin in this region. |
+| `--aws-ecs` | `false` | Includes ECS task discovery. Requires `--aws-region`. |
+| `--aws-poll-interval` | `5m` | AWS inventory polling interval. |
 | `--aws-events-queue-url` | empty | SQS queue that receives CloudTrail events from EventBridge. Optional. |
 | `--aws-firehose-stream-arn` | empty | Enables the plugin-owned Firehose VPC Flow Log receiver. Requires `--aws-region` and `AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY`. |
 | `--aws-firehose-access-key` | `$AGENTSHIELD_AWS_FIREHOSE_ACCESS_KEY` | Firehose shared key. Prefer the environment variable. |
@@ -67,10 +70,10 @@ Nothing calls a model unless one of the two feature flags below is set. Detectio
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--agentic-investigation` | `$AGENTSHIELD_AGENTIC_INVESTIGATION` or `false` | Investigate built-in novelty signals with a model agent that may promote findings. Runs in its own sampled queue. Requires an OpenAI Responses-compatible `--model-endpoint`; rejected with `--model-provider=anthropic`. |
-| `--deployment-rule-authoring` | `$AGENTSHIELD_DEPLOYMENT_RULE_AUTHORING` or `false` | Draft a detection rule for each Kubernetes Deployment Pod template revision with a model agent, from the Deployment's observed behavior. Drafts run in shadow mode until approved. Requires `--model-endpoint` or `--model-provider=anthropic`. |
+| `--resource-rule-authoring` | `$AGENTSHIELD_RESOURCE_RULE_AUTHORING` or `false` | Draft detection rules for resources that publish bounded authoring context. Drafts run in shadow mode until approved. Requires `--model-endpoint` or `--model-provider=anthropic`. |
 | `--model-endpoint` | `$AGENTSHIELD_MODEL_ENDPOINT` or selected provider default | Model API base URL. The provider client selects its supported request endpoint. Setting it alone enables nothing. |
 | `--model-api-key` | see below | Model API key. Prefer the environment. |
-| `--model-provider` | `openai` | Provider for the model-calling features: `openai` or `anthropic`. `anthropic` uses the Messages API, defaults the endpoint to `https://api.anthropic.com`, and supports only Deployment rule authoring; it cannot be combined with `--agentic-investigation`, which requires the Responses API. |
+| `--model-provider` | `openai` | Provider for the model-calling features: `openai` or `anthropic`. `anthropic` uses the Messages API and defaults the endpoint to `https://api.anthropic.com`; it cannot be combined with `--agentic-investigation`, which requires the Responses API. |
 | `--model` | `$AGENTSHIELD_MODEL` or `gpt-6-astra` | Model name. With Anthropic and no override, the author uses its provider default. |
 | `--model-reasoning-effort` | `$AGENTSHIELD_MODEL_REASONING_EFFORT` | Reasoning effort for compatible providers (for example `low`), for both features. Empty sends none. |
 
@@ -81,7 +84,7 @@ Nothing calls a model unless one of the two feature flags below is set. Detectio
 | `--detection-interval` | `1s` | Change-feed polling interval. |
 | `--detection-consumer` | `reasoning/default` | Durable consumer ID for the change-feed cursor. The default keeps cursors from earlier releases. |
 | `--detection-signal-retention` | `168h` | How long recorded detection signals and finished investigation jobs are kept. Minimum `1h`. |
-| `--detector-reload-interval` | `10s` | Polling interval for the active CEL ruleset and Deployment rules. Must be positive. |
+| `--detector-reload-interval` | `10s` | Polling interval for the active CEL ruleset and resource rules. Must be positive. |
 
 #### Agentic investigation
 
@@ -89,20 +92,20 @@ Nothing calls a model unless one of the two feature flags below is set. Detectio
 | --- | --- | --- |
 | `--agentic-investigation-retrieval` | `$AGENTSHIELD_AGENTIC_INVESTIGATION_RETRIEVAL` or `model_selected` | `model_selected` or `deterministic`. See [investigation tools](/docs/architecture/change-feed-and-reasoning/#investigation-tools). |
 | `--agentic-investigation-batch-window` | `30s` | How long a queued investigation waits so later windows that share a resource join it. `0` to `10m`. |
-| `--agentic-investigation-sample-rate` | `1` | Fraction of medium-risk investigations run, `0` to `1`. High and critical always run. |
+| `--agentic-investigation-sample-rate` | `0` | Fraction of investigations run, `0` to `1`. Zero disables agentic investigation, including high and critical work. |
 | `--agentic-investigation-dedup-window` | `1h` | Skip an investigation whose signal pattern was already investigated within this window. `0` disables. |
 | `--agentic-investigation-max-per-hour` | `0` (unlimited) | Investigations started in any trailing hour. Over budget, medium-risk jobs are skipped and high-risk jobs wait. |
 | `--agentic-investigation-max-attempts` | `5` | Failed attempts before a job fails permanently. |
 | `--agentic-investigation-poll-interval` | `1s` | Investigation queue polling interval. |
 
-#### Deployment rule authoring
+#### Resource rule authoring
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--deployment-rule-authoring-poll-interval` | `1s` | Rule-authoring queue polling interval. Must be positive. |
-| `--deployment-rule-authoring-timeout` | `5m` | Maximum duration of one rule-authoring model call. Minimum `30s`. |
+| `--resource-rule-authoring-poll-interval` | `1s` | Rule-authoring queue polling interval. Must be positive. |
+| `--resource-rule-authoring-timeout` | `5m` | Maximum duration of one rule-authoring model call. Minimum `30s`. |
 | `--rule-review-api` | `$AGENTSHIELD_RULE_REVIEW_API` or `false` | Serve the unauthenticated rule review and regenerate routes on a non-loopback listener. They are always served on a loopback listener. Set only behind an authenticating proxy or in a disposable environment. See [Reviewing over HTTP](/docs/architecture/detection-rules/#reviewing-and-regenerating-over-http). |
-| `--deployment-rule-baseline-window` | `6h` | How long a new Deployment or Pod template revision is observed before its rule is drafted. `0` to `24h`, the telemetry retention. See [Detection rules](/docs/architecture/detection-rules/#worker). |
+| `--resource-rule-stabilization-window` | `6h` | How long a new bounded resource context is observed before its rules are drafted. `0` to `24h`. See [Detection rules](/docs/architecture/detection-rules/). |
 
 API key lookup order: `--model-api-key`, then `AGENTSHIELD_MODEL_API_KEY`, then the conventional key for the selected provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`).
 

@@ -69,7 +69,7 @@ binding to a non-loopback address.
 ## Provider data
 
 - Kubernetes Secrets: only metadata and a sorted list of key names are stored. Values, type, and annotations never reach collections, PostgreSQL, or the graph. The informer still reads Secrets into memory, so the service account needs read access to them.
-- The AWS plugin uses the default SDK credential chain and never logs credentials.
+- The AWS plugin uses the default SDK credential chain and never logs credentials. For Kubernetes outside AWS, prefer [IAM Roles Anywhere](https://docs.aws.amazon.com/sdkref/latest/guide/access-rolesanywhere.html) with `aws_signing_helper` through `credential_process`; mount its config, certificate, and private key read-only and grant a least-privilege role. EKS deployments may use [EKS Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html).
 - Native events in PostgreSQL contain provider object JSON (minus Secret values). That includes ConfigMap `data` and literal Pod `env` values, which are common places for credentials to end up. Protect the database accordingly.
 
 ## Model endpoints
